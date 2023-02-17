@@ -24,23 +24,32 @@ int main(){
     //进入监听状态，等待用户发起请求
     listen(serv_sock, 20);
 
-    //接收客户端请求
-    struct sockaddr_in clnt_addr;
-    socklen_t clnt_addr_size = sizeof(clnt_addr);
-    int clnt_sock = accept(serv_sock, (struct sockaddr*)&clnt_addr, &clnt_addr_size);
+    while(true){
+      printf("wait for client!\n");
+      //接收客户端请求
+      struct sockaddr_in clnt_addr;
+      socklen_t clnt_addr_size = sizeof(clnt_addr);
+      int clnt_sock = accept(serv_sock, (struct sockaddr*)&clnt_addr, &clnt_addr_size);
 
-    //向客户端发送数据
-    char se_get[40];
-    read(clnt_sock,se_get,sizeof(se_get));
+      //向客户端发送数据
+      char se_get[1024];
+      read(clnt_sock,se_get,sizeof(se_get));
+      // for(int i = 0; i < 1024; i++){
 
-    printf("%s\n",se_get);
-    
-    char str[] = "Hello World!";
-    write(clnt_sock, str, sizeof(str));
+
+      // }
+      // se_get[5]
+
+      printf("%s\n",se_get);
+      
+      // char str[] = "Hello World!";
+      // write(clnt_sock, str, sizeof(str));
+      
+    }
    
     //关闭套接字
-    close(clnt_sock);
-    close(serv_sock);
+    // close(clnt_sock);
+    // close(serv_sock);
 
     return 0;
 }

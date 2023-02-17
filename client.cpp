@@ -1,11 +1,13 @@
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <stdio.h>
+#include <iostream>
 
 int main(){
+
     //创建套接字
     int sock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -18,7 +20,7 @@ int main(){
     connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
    
     //读取服务器传回的数据
-    char cl_sent[] = "I am client";
+    char cl_sent[] ="123";
     write(sock,cl_sent,sizeof(cl_sent));
     
     char buffer[40];
