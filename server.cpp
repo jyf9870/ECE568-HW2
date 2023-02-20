@@ -3,6 +3,10 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <vector>
+#include <sstream>
+#include <string>
+
 
 using namespace std;
 
@@ -26,7 +30,7 @@ int main(int argc, char *argv[])
     cerr << "Error: cannot get address info for host" << endl;
     cerr << "  (" << hostname << "," << port << ")" << endl;
     return -1;
-  } //if
+  } 
 
   socket_fd = socket(host_info_list->ai_family, 
 		     host_info_list->ai_socktype, 
@@ -35,7 +39,7 @@ int main(int argc, char *argv[])
     cerr << "Error: cannot create socket" << endl;
     cerr << "  (" << hostname << "," << port << ")" << endl;
     return -1;
-  } //if
+  } 
 
   int yes = 1;
   status = setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
@@ -44,7 +48,7 @@ int main(int argc, char *argv[])
     cerr << "Error: cannot bind socket" << endl;
     cerr << "  (" << hostname << "," << port << ")" << endl;
     return -1;
-  } //if
+  } 
 
   status = listen(socket_fd, 100);
     
@@ -52,7 +56,7 @@ int main(int argc, char *argv[])
     cerr << "Error: cannot listen on socket" << endl; 
     cerr << "  (" << hostname << "," << port << ")" << endl;
     return -1;
-  } //if
+  } 
 
   while(true){
     cout << "Waiting for connection on port " << port << endl;
@@ -63,15 +67,51 @@ int main(int argc, char *argv[])
     if (client_connection_fd == -1) {
       cerr << "Error: cannot accept connection on socket" << endl;
       return -1;
-    } //if
+    } 
 
     char buffer[1024];
-    recv(client_connection_fd, buffer, 1024, 0);
-    // buffer[9] = 0;
+    int length = recv(client_connection_fd, buffer, 1024, 0);
+    string request = string(buffer, length);
 
-    cout << "Server received: " << buffer << endl;
-  
+    //all of the requests are stored in the first vector
+    vector<string> first; 
+
+    //the name of the requests are stored in names
+    vector<string> names; 
+
+    //the body of the requests are stored in bodies
+    vector<string> bodies; 
+    size_t pos = 0;
+    string delimiter = ": ";
+ 
+    stringstream ss(request);
+    string line;
+    while (getline(ss, line, '\r')) {
+        if (!line.empty()) {
+            // remove the '\n' character at the end of the line
+            if (line.back() == '\n') {
+                line.pop_back();
+            }
+            // process the line
+
+            if((pos = line.find(delimiter)) != string::npos) {
+                string name = line.substr(0, pos);
+                string body = line.substr(pos+2);
+                names.push_back(name);
+                bodies.push_back(body);
+            }
+            first.push_back(line);
+        }
+        // skip the '\n' character after the '\r'
+        ss.ignore(1);
+    }
+        
+
+    for (size_t i = 1; i < bodies.size(); i++) {
+        cout << bodies[i] << endl;
+    }
   }
+
 
 //when finish the proxy, close the socket 
   // freeaddrinfo(host_info_list);
