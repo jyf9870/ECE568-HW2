@@ -6,19 +6,25 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <cstring>
 #include <map>
+#include <sstream>
+#include <vector>
 
+using namespace std;
 class Request {
+ private:
+  string request;
+  map <string,string> requestMap;
+  string method;
+  string methodContent;
+  string methodHttp;
  public:
-  std::string request;
-  std::string method;
-  std::string fileName;
-  std::map <std::string,std::string> map;
- public:
-  Request(std::string request) : request(request) {
-    readLine();
+  Request(string request) : request(request) {
     readRequest();
   }
-  void readLine();
   void readRequest();
+  map<string, string> getRequestMap() const;
+  string getMethod() const;
+  string getMethodContent() const;
 };
