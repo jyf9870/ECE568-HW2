@@ -5,6 +5,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <iostream>
+#include <cstring>
 
 int main(){
     //创建套接字
@@ -17,7 +19,7 @@ int main(){
     struct sockaddr_in serv_addr;
     memset(&serv_addr, 0, sizeof(serv_addr));  //每个字节都用0填充
     serv_addr.sin_family = AF_INET;  //使用IPv4地址
-    serv_addr.sin_addr.s_addr = inet_addr("67.159.88.123");  //具体的IP地址
+    serv_addr.sin_addr.s_addr = inet_addr("174.109.104.90");  //具体的IP地址
     serv_addr.sin_port = htons(8000);  //端口
     bind(serv_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
 
@@ -31,25 +33,28 @@ int main(){
       socklen_t clnt_addr_size = sizeof(clnt_addr);
       int clnt_sock = accept(serv_sock, (struct sockaddr*)&clnt_addr, &clnt_addr_size);
 
-      //向客户端发送数据
+      //read the client data
       char se_get[1024];
       read(clnt_sock,se_get,sizeof(se_get));
       // for(int i = 0; i < 1024; i++){
-
-
-      // }
-      // se_get[5]
-
-      printf("%s\n",se_get);
-      
+        std::string s = "";
+        int i = 0;
+      while (se_get[i] != '\n') {
+        s += se_get;
+        std::cout << s << std::endl;
+        i++;
+      }
+       std::cout << se_get << std::endl;
+      //向客户端发送数据
       // char str[] = "Hello World!";
       // write(clnt_sock, str, sizeof(str));
       
-    }
+    
    
     //关闭套接字
     // close(clnt_sock);
     // close(serv_sock);
 
     return 0;
+}
 }
