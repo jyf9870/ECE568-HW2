@@ -119,10 +119,6 @@ int main(int argc, char *argv[])
     // if(ctopRequest->getMethod() == "CONNECT")
     // send(client_connection_fd, "HTTP/1.1 200 OK\r\n\r\n", 19, 0);
 
-    // cout<<"client send to proxy"<<endl;
-    // cout<<request<<endl;
-    // cout<<"proxy send to server:"<<endl;
-    // cout<<buffer<<endl;
     cout<<recvBuffer<<endl;
 
     send(client_connection_fd,recvBuffer, length, 0);
