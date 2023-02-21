@@ -9,6 +9,7 @@
 #include <mutex>
 #include "request.h"
 #include "socket.h"
+#include "requirement.h"
 
 
 using namespace std;
@@ -17,6 +18,7 @@ int main(int argc, char *argv[])
 {
   int status;
   int socket_fd;
+  //int id = 0;
   struct addrinfo host_info;
   struct addrinfo *host_info_list;
   const char *hostname = NULL;
@@ -90,25 +92,47 @@ int main(int argc, char *argv[])
     } 
 
     char buffer[65536];
-    int length = recv(client_connection_fd, buffer, 1024, 0);
+    int length = recv(client_connection_fd, buffer, 65536, 0);
+    // cout<<"buffer is:"<<endl;
+    // cout<<buffer<<endl;
     string request = string(buffer, length);
     Request * ctopRequest = new Request(request);
 
     /*
     * this is an error handing part
     */
-    if (ctopRequest->getMethod() != "POST" && ctopRequest->getMethod() != "GET" && ctopRequest->getMethod() != "CONNECT") {
-      const char * req400 = "HTTP/1.1 400 Bad Request";
-      //TODO!!!: write something into the log file!
-      return -1;
-    }
+    // if (ctopRequest->getMethod() != "POST" && ctopRequest->getMethod() != "GET" && ctopRequest->getMethod() != "CONNECT") {
+    //   const char * req400 = "HTTP/1.1 400 Bad Request";
+    //   //TODO!!!: write something into the log file!
+    //   return -1;
+    // }
 
  
     string hostname = ctopRequest->getRequestMap().find("Host")->second;
-    cout<<hostname.c_str()<<endl;
-
     Socket socket;
-    int server_fd = socket.connectToServer(hostname.c_str());
+    int server_fd = socket.connectToServer(hostname.c_str(),ctopRequest->getPort().c_str()); //connected successfully from client to proxy and proxy to server
+    
+    //sent/receive request to/from server
+    send(server_fd, buffer,length,0);
+    char recvBuffer[65536];
+    length = recv(server_fd, recvBuffer, 65536, 0);
+    // if(ctopRequest->getMethod() == "CONNECT")
+    // send(client_connection_fd, "HTTP/1.1 200 OK\r\n\r\n", 19, 0);
+
+    // cout<<"client send to proxy"<<endl;
+    // cout<<request<<endl;
+    // cout<<"proxy send to server:"<<endl;
+    // cout<<buffer<<endl;
+    cout<<recvBuffer<<endl;
+
+    send(client_connection_fd,recvBuffer, length, 0);
+
+
+   /*
+    * start to read the reponse from server
+    *
+    */
+
  
   }
   //when finish the proxy, close the socket 

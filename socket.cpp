@@ -8,12 +8,11 @@
 
 using namespace std;
 
-int Socket::connectToServer(const char * hostname){
+int Socket::connectToServer(const char * hostname, const char * port){
   int status;
   int socket_fd;
   struct addrinfo host_info;
   struct addrinfo *host_info_list;
-  const char *port = "443";
 
   memset(&host_info, 0, sizeof(host_info));
   host_info.ai_family = AF_UNSPEC;
@@ -43,7 +42,7 @@ int Socket::connectToServer(const char * hostname){
     cerr << "  (" << hostname << "," << port << ")" << endl;
     return -1;
   }
-  std::cout << "Connect to server successfully\n";
+  std::cout << "Connect to server successfully"<<endl;
   freeaddrinfo(host_info_list);
   return socket_fd;
 }

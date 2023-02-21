@@ -29,8 +29,14 @@ void Request::readRequest() {
                 string name = line.substr(0, pos);
                 string body = line.substr(pos+2);
                 if(name.compare("Host")==0){
-                  string hostname = body.substr(0, body.find(":"));
+                  size_t position = body.find(":");
+                  string hostname = body.substr(0, position);
                   requestMap.insert(pair<string,string>(name,hostname));
+                  // if(position != string::npos){
+                  //   port = body.substr(position+1);
+                  // }else{
+                    port = "80";
+                  //}
                 }else{
                 requestMap.insert(pair<string,string>(name,body));
                 }
@@ -60,4 +66,7 @@ string Request::getMethod() const{
 }
 string Request::getMethodContent() const{
   return methodContent;
+}
+string Request::getPort() const{
+  return port;
 }

@@ -19,6 +19,7 @@ class Request {
   string method;
   string methodContent;
   string methodHttp;
+  string port;
  public:
   Request(string request) : request(request) {
     readRequest();
@@ -27,4 +28,5 @@ class Request {
   map<string, string> getRequestMap() const;
   string getMethod() const;
   string getMethodContent() const;
+  string getPort() const;
 };

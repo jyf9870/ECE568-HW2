@@ -7,5 +7,5 @@
 using namespace std;
 class Socket {
     public:
-    int connectToServer(const char * hostname);
+    int connectToServer(const char * hostname, const char * port);
 };
