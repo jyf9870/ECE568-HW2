@@ -16,118 +16,48 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int status;
-  int socket_fd;
-  //int id = 0;
-  struct addrinfo host_info;
-  struct addrinfo *host_info_list;
-  const char *hostname = NULL;
-  const char *port     = "8000";
-
-  memset(&host_info, 0, sizeof(host_info));
-
-  host_info.ai_family   = AF_UNSPEC;
-  host_info.ai_socktype = SOCK_STREAM;
-  host_info.ai_flags    = AI_PASSIVE;
-
-  status = getaddrinfo(hostname, port, &host_info, &host_info_list);
-
-
-  /*
-  * this is an error handing part
-  */
-  if (status != 0) {
-    cerr << "Error: cannot get address info for host" << endl;
-    cerr << "  (" << hostname << "," << port << ")" << endl;
-    return -1;
-  } 
-
-  socket_fd = socket(host_info_list->ai_family, 
-		     host_info_list->ai_socktype, 
-		     host_info_list->ai_protocol);
-  
-  /*
-  * this is an error handing part
-  */
-  if (socket_fd == -1) {
-    cerr << "Error: cannot create socket" << endl;
-    cerr << "  (" << hostname << "," << port << ")" << endl;
-    return -1;
-  } 
-
-  int yes = 1;
-  status = setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-  status = bind(socket_fd, host_info_list->ai_addr, host_info_list->ai_addrlen);
-  /*
-  * this is an error handing part
-  */
-  if (status == -1) {
-    cerr << "Error: cannot bind socket" << endl;
-    cerr << "  (" << hostname << "," << port << ")" << endl;
-    return -1;
-  } 
-
-  status = listen(socket_fd, 100);
-  /*
-  * this is an error handing part
-  */
-  if (status == -1) {
-    cerr << "Error: cannot listen on socket" << endl; 
-    cerr << "  (" << hostname << "," << port << ")" << endl;
-    return -1;
-  } 
-
+  Socket socket;
+  int socket_fd = socket.connectToClient(); //connect to client
   while(true){
-    cout << "Waiting for connection on port " << port << endl;
-    struct sockaddr_storage socket_addr;
-    socklen_t socket_addr_len = sizeof(socket_addr);
-    int client_connection_fd;
-    client_connection_fd = accept(socket_fd, (struct sockaddr *)&socket_addr, &socket_addr_len);
-    /*
-    * this is an error handing part
-    */
-    if (client_connection_fd == -1) {
-      cerr << "Error: cannot accept connection on socket" << endl;
-      return -1;
-    } 
+    cout << "Waiting for connection on port " << socket.port << endl;
+    int client_connection_fd = socket.acceptToClient(socket_fd); //accepted
 
     char buffer[65536];
     int length = recv(client_connection_fd, buffer, 65536, 0);
-    // cout<<"buffer is:"<<endl;
-    // cout<<buffer<<endl;
     string request = string(buffer, length);
-    Request * ctopRequest = new Request(request);
+    Request * ctopRequest = new Request(request); //handle requests
 
     /*
     * this is an error handing part
     */
-    // if (ctopRequest->getMethod() != "POST" && ctopRequest->getMethod() != "GET" && ctopRequest->getMethod() != "CONNECT") {
-    //   const char * req400 = "HTTP/1.1 400 Bad Request";
-    //   //TODO!!!: write something into the log file!
-    //   return -1;
-    // }
+    if (ctopRequest->getMethod() != "POST" && ctopRequest->getMethod() != "GET" && ctopRequest->getMethod() != "CONNECT") {
+      const char * req400 = "HTTP/1.1 400 Bad Request";
+      //TODO!!!: write something into the log file!
+      return -1;
+    }
 
- 
     string hostname = ctopRequest->getRequestMap().find("Host")->second;
-    Socket socket;
     int server_fd = socket.connectToServer(hostname.c_str(),ctopRequest->getPort().c_str()); //connected successfully from client to proxy and proxy to server
     
-    //sent/receive request to/from server
-    send(server_fd, buffer,length,0);
-    char recvBuffer[65536];
-    length = recv(server_fd, recvBuffer, 65536, 0);
-    // if(ctopRequest->getMethod() == "CONNECT")
-    // send(client_connection_fd, "HTTP/1.1 200 OK\r\n\r\n", 19, 0);
-
-    cout<<recvBuffer<<endl;
-
+    //sent/receive request to/from server, send it to client
+    send(server_fd, buffer,length,0); 
+    char recvBuffer[100000];
+    length = recv(server_fd, recvBuffer, 100000, 0);
     send(client_connection_fd,recvBuffer, length, 0);
 
+    // cout<<"request from clinet:"<<endl;
+    // cout<<buffer<<endl;
+    // cout<<"proxy received from server:"<<endl;
+    // cout<<length<<endl;
+    // cout<<"request is:"<<endl;
+    // cout<<request<<endl;
+    cout<<"response is:"<<endl;
+    cout<<recvBuffer<<endl;
 
-   /*
-    * start to read the reponse from server
-    *
-    */
+    if(ctopRequest->getMethod() == "CONNECT"){
+      socket.connectRequest(server_fd,client_connection_fd);
+    }
+
 
  
   }

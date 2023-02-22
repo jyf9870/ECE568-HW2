@@ -32,11 +32,11 @@ void Request::readRequest() {
                   size_t position = body.find(":");
                   string hostname = body.substr(0, position);
                   requestMap.insert(pair<string,string>(name,hostname));
-                  // if(position != string::npos){
-                  //   port = body.substr(position+1);
-                  // }else{
+                  if(position != string::npos){
+                    port = body.substr(position+1);
+                  }else{
                     port = "80";
-                  //}
+                  }
                 }else{
                 requestMap.insert(pair<string,string>(name,body));
                 }
