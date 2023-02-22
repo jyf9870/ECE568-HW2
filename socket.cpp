@@ -59,7 +59,7 @@ int Socket::connectToClient(){
     return -1;
   } 
 
-  status = listen(socket_fd, 100);
+  status = listen(socket_fd, 1000);
   /*
   * this is an error handing part
   */

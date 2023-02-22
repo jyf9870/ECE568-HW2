@@ -1,4 +1,5 @@
 #include "request.h"
+#include <iostream>
 using namespace std;
 
 void Request::readRequest() {
@@ -28,14 +29,16 @@ void Request::readRequest() {
             if((pos = line.find(delimiter)) != string::npos) {
                 string name = line.substr(0, pos);
                 string body = line.substr(pos+2);
-                if(name.compare("Host")==0){
-                  size_t position = body.find(":");
-                  string hostname = body.substr(0, position);
-                  requestMap.insert(pair<string,string>(name,hostname));
+                if(name == "Host"){
+                  size_t position = body.find_first_of(":\n");
                   if(position != string::npos){
+                    string hostname = body.substr(0, position);
                     port = body.substr(position+1);
-                  }else{
+                    requestMap.insert(pair<string,string>(name,hostname));
+                  }
+                  else{
                     port = "80";
+                    requestMap.insert(pair<string,string>(name,body));
                   }
                 }else{
                 requestMap.insert(pair<string,string>(name,body));
@@ -51,11 +54,15 @@ void Request::readRequest() {
    /* 
     * Only for test --> print all of the request the proxy received from  client
     */
-    // for (std::map<string,string>::iterator it=requestMap.begin(); it!=requestMap.end(); ++it)
-    // std::cout << it->first << " => " << it->second << '\n';
-    // std::cout << method << endl;
-    // std::cout << methodContent << endl;
-    // std::cout << methodHttp << endl;
+    // for (std::map<string,string>::iterator it=requestMap.begin(); it!=requestMap.end(); ++it){
+    //   std::cout << it->first << " => " << it->second << '\n';
+    // }
+    
+    //   std::cout << method << endl;
+    //   std::cout << methodContent << endl;
+    //   std::cout << methodHttp << endl;
+    //   std::cout << port << endl;
+      
   }
 
 map<string, string> Request::getRequestMap() const {

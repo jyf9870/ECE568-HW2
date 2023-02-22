@@ -26,7 +26,8 @@ int main(int argc, char *argv[])
     int length = recv(client_connection_fd, buffer, 65536, 0);
     string request = string(buffer, length);
     Request * ctopRequest = new Request(request); //handle requests
-
+    cout<<"request is:"<<endl;
+    cout<<request<<endl;
     /*
     * this is an error handing part
     */
@@ -38,28 +39,14 @@ int main(int argc, char *argv[])
 
     string hostname = ctopRequest->getRequestMap().find("Host")->second;
     int server_fd = socket.connectToServer(hostname.c_str(),ctopRequest->getPort().c_str()); //connected successfully from client to proxy and proxy to server
-    
-    //sent/receive request to/from server, send it to client
-    send(server_fd, buffer,length,0); 
-    char recvBuffer[100000];
-    length = recv(server_fd, recvBuffer, 100000, 0);
-    send(client_connection_fd,recvBuffer, length, 0);
 
-    // cout<<"request from clinet:"<<endl;
-    // cout<<buffer<<endl;
-    // cout<<"proxy received from server:"<<endl;
-    // cout<<length<<endl;
-    // cout<<"request is:"<<endl;
-    // cout<<request<<endl;
-    cout<<"response is:"<<endl;
-    cout<<recvBuffer<<endl;
 
     HttpMethod httpMethod;
     if(ctopRequest->getMethod() == "CONNECT"){
       httpMethod.connectRequest(server_fd,client_connection_fd);
     }
     if(ctopRequest->getMethod() == "GET"){
-      httpMethod.getRequest(server_fd,client_connection_fd);
+      //httpMethod.getRequest(server_fd,client_connection_fd);
       cout<<"getgetgetget!!!!!!"<<endl;
     }
     if(ctopRequest->getMethod() == "POST"){
@@ -67,12 +54,7 @@ int main(int argc, char *argv[])
       cout<<"postpostpostpost!!!!!!"<<endl;
     }
 
-
- 
   }
-  //when finish the proxy, close the socket 
-  // freeaddrinfo(host_info_list);
-  // close(socket_fd);
 
   return 0;
 }
