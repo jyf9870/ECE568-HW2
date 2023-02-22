@@ -10,7 +10,7 @@
 #include "request.h"
 #include "socket.h"
 #include "requirement.h"
-
+#include "httpMethod.h"
 
 using namespace std;
 
@@ -54,13 +54,16 @@ int main(int argc, char *argv[])
     cout<<"response is:"<<endl;
     cout<<recvBuffer<<endl;
 
+    HttpMethod httpMethod;
     if(ctopRequest->getMethod() == "CONNECT"){
-      socket.connectRequest(server_fd,client_connection_fd);
+      httpMethod.connectRequest(server_fd,client_connection_fd);
     }
     if(ctopRequest->getMethod() == "GET"){
+      httpMethod.getRequest(server_fd,client_connection_fd);
       cout<<"getgetgetget!!!!!!"<<endl;
     }
     if(ctopRequest->getMethod() == "POST"){
+      httpMethod.postRequest(server_fd,client_connection_fd);
       cout<<"postpostpostpost!!!!!!"<<endl;
     }
 

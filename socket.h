@@ -10,7 +10,6 @@ class Socket {
     int connectToServer(const char * hostname, const char * port);
     int acceptToClient(int socket_fd);
     int connectToClient();
-    void connectRequest(int server_fd, int client_connection_fd);
     const char *port;
 
 };
