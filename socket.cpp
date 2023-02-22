@@ -127,26 +127,26 @@ int Socket::connectToServer(const char * hostname, const char * port){
   return socket_fd;
 }
 void Socket::connectRequest(int server_fd, int client_connection_fd){
-  fd_set readfds;
-      int nfds = server_fd > client_connection_fd ? server_fd + 1 : client_connection_fd + 1;
+      fd_set read_fd;
+      int selector = server_fd > client_connection_fd ? server_fd + 1 : client_connection_fd + 1;
 
       while (1) {
-        FD_ZERO(&readfds);
-        FD_SET(server_fd, &readfds);
-        FD_SET(client_connection_fd, &readfds);
+        FD_ZERO(&read_fd);
+        FD_SET(server_fd, &read_fd);
+        FD_SET(client_connection_fd, &read_fd);
 
-        select(nfds, &readfds, NULL, NULL, NULL);
+        select(selector, &read_fd, NULL, NULL, NULL);
         int fd[2] = {server_fd, client_connection_fd};
-        int len;
+        int length;
         for (int i = 0; i < 2; i++) {
-          char message[65536] = {0};
-          if (FD_ISSET(fd[i], &readfds)) {
-            len = recv(fd[i], message, sizeof(message), 0);
-            if (len <= 0) {
+          char message[100000];
+          if (FD_ISSET(fd[i], &read_fd)) {
+            length = recv(fd[i], message, sizeof(message), 0);
+            if (length <= 0) {
               return;
             }
             else {
-              if (send(fd[1 - i], message, len, 0) <= 0) {
+              if (send(fd[1 - i], message, length, 0) <= 0) {
                 return;
               }
             }
