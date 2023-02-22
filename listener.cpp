@@ -57,6 +57,12 @@ int main(int argc, char *argv[])
     if(ctopRequest->getMethod() == "CONNECT"){
       socket.connectRequest(server_fd,client_connection_fd);
     }
+    if(ctopRequest->getMethod() == "GET"){
+      cout<<"getgetgetget!!!!!!"<<endl;
+    }
+    if(ctopRequest->getMethod() == "POST"){
+      cout<<"postpostpostpost!!!!!!"<<endl;
+    }
 
 
  
