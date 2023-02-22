@@ -26,8 +26,6 @@ int main(int argc, char *argv[])
     int length = recv(client_connection_fd, buffer, 65536, 0);
     string request = string(buffer, length);
     Request * ctopRequest = new Request(request); //handle requests
-    cout<<"request is:"<<endl;
-    cout<<request<<endl;
     /*
     * this is an error handing part
     */
@@ -43,16 +41,39 @@ int main(int argc, char *argv[])
 
     HttpMethod httpMethod;
     if(ctopRequest->getMethod() == "CONNECT"){
+        cout<<"I am handling connect TAT!!!!!!"<<endl; 
       httpMethod.connectRequest(server_fd,client_connection_fd);
+       cout<<"CONNECTCONNECTCONNECTCONNECT!!!!!!"<<endl;
     }
     if(ctopRequest->getMethod() == "GET"){
-      //httpMethod.getRequest(server_fd,client_connection_fd);
+      cout<<"I am handling get TAT!!!!!!"<<endl; 
+      send(server_fd, buffer,length,0); 
+      char recvBuffer[100000];
+      int length2 = recv(server_fd, recvBuffer, 100000, 0);
+      cout<<"I received!!!!!!"<<endl; 
+      send(client_connection_fd,recvBuffer, length2, 0);
+      cout<<"I sent!!!!!!"<<endl; 
+      while(length2 > 0){
+        char new_recvBuffer[100000];
+        length2 = recv(server_fd, new_recvBuffer, 100000, 0);
+        if(length2 <= 0) break;
+        cout<<"I received!!!!!!"<<endl; 
+        send(client_connection_fd,new_recvBuffer, length2, 0);
+        cout<<"I sent!!!!!!"<<endl; 
+        cout<<length2<<endl; 
+      }
       cout<<"getgetgetget!!!!!!"<<endl;
+      // httpMethod.getRequest(server_fd,client_connection_fd);
+      
     }
     if(ctopRequest->getMethod() == "POST"){
+            cout<<"I am handling post TAT!!!!!!"<<endl; 
       httpMethod.postRequest(server_fd,client_connection_fd);
       cout<<"postpostpostpost!!!!!!"<<endl;
     }
+
+    close(server_fd);
+    close(client_connection_fd);
 
   }
 

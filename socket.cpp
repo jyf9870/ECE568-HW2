@@ -59,7 +59,7 @@ int Socket::connectToClient(){
     return -1;
   } 
 
-  status = listen(socket_fd, 1000);
+  status = listen(socket_fd, 1000); //TODO: number of connections should be handled after closing all of the used socket
   /*
   * this is an error handing part
   */
