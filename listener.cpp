@@ -40,34 +40,34 @@ int main(int argc, char *argv[])
 
 
     HttpMethod httpMethod;
+
+   const char* response_with_chunk = "HTTP/1.1 200 OK\r\n"
+                                      "Last-Modified: Fri, 17 Sep 2021 14:28:00 GMT\r\n"
+                                      "\r\n"
+                                      "4\r\n"
+                                      "This\r\n"
+                                      "4\r\n"
+                                      " is \r\n"
+                                      "7\r\n"
+                                      "a chunk.\r\n"
+                                      "0\r\n"
+                                      "\r\n";
+    httpMethod.parseHttpResponse(response_with_chunk, strlen(response_with_chunk));
+    
     if(ctopRequest->getMethod() == "CONNECT"){
-        cout<<"I am handling connect TAT!!!!!!"<<endl; 
+      cout<<"I am handling connect TAT!!!!!!"<<endl; 
       httpMethod.connectRequest(server_fd,client_connection_fd);
-       cout<<"CONNECTCONNECTCONNECTCONNECT!!!!!!"<<endl;
+      cout<<"CONNECTCONNECTCONNECTCONNECT!!!!!!"<<endl;
     }
+
     if(ctopRequest->getMethod() == "GET"){
       cout<<"I am handling get TAT!!!!!!"<<endl; 
-      send(server_fd, buffer,length,0); 
-      char recvBuffer[100000];
-      int length2 = recv(server_fd, recvBuffer, 100000, 0);
-      cout<<"I received!!!!!!"<<endl; 
-      send(client_connection_fd,recvBuffer, length2, 0);
-      cout<<"I sent!!!!!!"<<endl; 
-      while(length2 > 0){
-        char new_recvBuffer[100000];
-        length2 = recv(server_fd, new_recvBuffer, 100000, 0);
-        if(length2 <= 0) break;
-        cout<<"I received!!!!!!"<<endl; 
-        send(client_connection_fd,new_recvBuffer, length2, 0);
-        cout<<"I sent!!!!!!"<<endl; 
-        cout<<length2<<endl; 
-      }
-      cout<<"getgetgetget!!!!!!"<<endl;
-      // httpMethod.getRequest(server_fd,client_connection_fd);
-      
+      httpMethod.getRequest(server_fd,client_connection_fd,buffer, length);
+      cout<<"getgetgetget!!!!!!"<<endl;   
     }
+
     if(ctopRequest->getMethod() == "POST"){
-            cout<<"I am handling post TAT!!!!!!"<<endl; 
+      cout<<"I am handling post TAT!!!!!!"<<endl; 
       httpMethod.postRequest(server_fd,client_connection_fd);
       cout<<"postpostpostpost!!!!!!"<<endl;
     }
