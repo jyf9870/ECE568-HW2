@@ -10,130 +10,72 @@
 #include "request.h"
 #include "socket.h"
 #include "requirement.h"
-
+#include "httpMethod.h"
 
 using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int status;
-  int socket_fd;
-  //int id = 0;
-  struct addrinfo host_info;
-  struct addrinfo *host_info_list;
-  const char *hostname = NULL;
-  const char *port     = "8000";
-
-  memset(&host_info, 0, sizeof(host_info));
-
-  host_info.ai_family   = AF_UNSPEC;
-  host_info.ai_socktype = SOCK_STREAM;
-  host_info.ai_flags    = AI_PASSIVE;
-
-  status = getaddrinfo(hostname, port, &host_info, &host_info_list);
-
-
-  /*
-  * this is an error handing part
-  */
-  if (status != 0) {
-    cerr << "Error: cannot get address info for host" << endl;
-    cerr << "  (" << hostname << "," << port << ")" << endl;
-    return -1;
-  } 
-
-  socket_fd = socket(host_info_list->ai_family, 
-		     host_info_list->ai_socktype, 
-		     host_info_list->ai_protocol);
-  
-  /*
-  * this is an error handing part
-  */
-  if (socket_fd == -1) {
-    cerr << "Error: cannot create socket" << endl;
-    cerr << "  (" << hostname << "," << port << ")" << endl;
-    return -1;
-  } 
-
-  int yes = 1;
-  status = setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-  status = bind(socket_fd, host_info_list->ai_addr, host_info_list->ai_addrlen);
-  /*
-  * this is an error handing part
-  */
-  if (status == -1) {
-    cerr << "Error: cannot bind socket" << endl;
-    cerr << "  (" << hostname << "," << port << ")" << endl;
-    return -1;
-  } 
-
-  status = listen(socket_fd, 100);
-  /*
-  * this is an error handing part
-  */
-  if (status == -1) {
-    cerr << "Error: cannot listen on socket" << endl; 
-    cerr << "  (" << hostname << "," << port << ")" << endl;
-    return -1;
-  } 
-
+  Socket socket;
+  int socket_fd = socket.connectToClient(); //connect to client
   while(true){
-    cout << "Waiting for connection on port " << port << endl;
-    struct sockaddr_storage socket_addr;
-    socklen_t socket_addr_len = sizeof(socket_addr);
-    int client_connection_fd;
-    client_connection_fd = accept(socket_fd, (struct sockaddr *)&socket_addr, &socket_addr_len);
-    /*
-    * this is an error handing part
-    */
-    if (client_connection_fd == -1) {
-      cerr << "Error: cannot accept connection on socket" << endl;
-      return -1;
-    } 
+    cout << "Waiting for connection on port " << socket.port << endl;
+    int client_connection_fd = socket.acceptToClient(socket_fd); //accepted
 
     char buffer[65536];
     int length = recv(client_connection_fd, buffer, 65536, 0);
-    // cout<<"buffer is:"<<endl;
-    // cout<<buffer<<endl;
     string request = string(buffer, length);
-    Request * ctopRequest = new Request(request);
-
+    Request * ctopRequest = new Request(request); //handle requests
     /*
     * this is an error handing part
     */
-    // if (ctopRequest->getMethod() != "POST" && ctopRequest->getMethod() != "GET" && ctopRequest->getMethod() != "CONNECT") {
-    //   const char * req400 = "HTTP/1.1 400 Bad Request";
-    //   //TODO!!!: write something into the log file!
-    //   return -1;
-    // }
+    if (ctopRequest->getMethod() != "POST" && ctopRequest->getMethod() != "GET" && ctopRequest->getMethod() != "CONNECT") {
+      const char * req400 = "HTTP/1.1 400 Bad Request";
+      //TODO!!!: write something into the log file!
+      return -1;
+    }
 
- 
     string hostname = ctopRequest->getRequestMap().find("Host")->second;
-    Socket socket;
     int server_fd = socket.connectToServer(hostname.c_str(),ctopRequest->getPort().c_str()); //connected successfully from client to proxy and proxy to server
+
+
+    HttpMethod httpMethod;
+
+   const char* response_with_chunk = "HTTP/1.1 200 OK\r\n"
+                                      "Last-Modified: Fri, 17 Sep 2021 14:28:00 GMT\r\n"
+                                      "\r\n"
+                                      "4\r\n"
+                                      "This\r\n"
+                                      "4\r\n"
+                                      " is \r\n"
+                                      "7\r\n"
+                                      "a chunk.\r\n"
+                                      "0\r\n"
+                                      "\r\n";
+    httpMethod.parseHttpResponse(response_with_chunk, strlen(response_with_chunk));
     
-    //sent/receive request to/from server
-    send(server_fd, buffer,length,0);
-    char recvBuffer[65536];
-    length = recv(server_fd, recvBuffer, 65536, 0);
-    // if(ctopRequest->getMethod() == "CONNECT")
-    // send(client_connection_fd, "HTTP/1.1 200 OK\r\n\r\n", 19, 0);
+    if(ctopRequest->getMethod() == "CONNECT"){
+      cout<<"I am handling connect TAT!!!!!!"<<endl; 
+      httpMethod.connectRequest(server_fd,client_connection_fd);
+      cout<<"CONNECTCONNECTCONNECTCONNECT!!!!!!"<<endl;
+    }
 
-    cout<<recvBuffer<<endl;
+    if(ctopRequest->getMethod() == "GET"){
+      cout<<"I am handling get TAT!!!!!!"<<endl; 
+      httpMethod.getRequest(server_fd,client_connection_fd,buffer, length);
+      cout<<"getgetgetget!!!!!!"<<endl;   
+    }
 
-    send(client_connection_fd,recvBuffer, length, 0);
+    if(ctopRequest->getMethod() == "POST"){
+      cout<<"I am handling post TAT!!!!!!"<<endl; 
+      httpMethod.postRequest(server_fd,client_connection_fd);
+      cout<<"postpostpostpost!!!!!!"<<endl;
+    }
 
+    close(server_fd);
+    close(client_connection_fd);
 
-   /*
-    * start to read the reponse from server
-    *
-    */
-
- 
   }
-  //when finish the proxy, close the socket 
-  // freeaddrinfo(host_info_list);
-  // close(socket_fd);
 
   return 0;
 }
