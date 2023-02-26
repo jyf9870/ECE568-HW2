@@ -35,9 +35,9 @@ bool Response::isChunked(){
 
 boost::beast::string_view Response::hasLastModified(){
     // Get the last modified header
-    auto iter = parser.get().find("Last-Modified");
-    if (iter != parser.get().end()) {
-        return iter->value();
+    auto iter2 = parser.get().find("Last-Modified");
+    if (iter2 != parser.get().end()) {
+        return iter2->value();
     } else {
         return boost::beast::string_view();
     }
@@ -69,9 +69,9 @@ bool Response::hasNoCache(){
 
 boost::beast::string_view Response::eTag(){
     // Get the ETag header
-    auto iter = parser.get().find("ETag");
-    if (iter != parser.get().end()) {
-        boost::beast::string_view eTag = iter->value();
+    auto iter3 = parser.get().find("ETag");
+    if (iter3 != parser.get().end()) {
+        boost::beast::string_view eTag = iter3->value();
         // eTag contains the ETag header value
         return eTag;
     }
@@ -89,8 +89,16 @@ int Response::maxAge(){
         size_t pos = cacheControl.find("max-age=");
         if (pos != boost::beast::string_view::npos) {
             // Extract the value of the max-age directive
-            int maxAge = std::stoi(std::string(cacheControl.substr(pos+8, cacheControl.size())));
-            // maxAge contains the max-age value
+            size_t pos2 = cacheControl.find(",",pos+8);
+            cout<<"pos2"<<endl;
+            cout<<pos2<<endl;
+            int maxAge = -1;
+            if(pos2 != boost::beast::string_view::npos) {
+                 maxAge= std::stoi(std::string(cacheControl.substr(pos+8,pos2)));
+            }else{
+                 maxAge= std::stoi(std::string(cacheControl.substr(pos+8, cacheControl.size())));
+            }
+                 // maxAge contains the max-age value
             return maxAge;           
         }
     }
@@ -98,6 +106,23 @@ int Response::maxAge(){
     return -1;
 }
 
+bool Response::hasPrivate(){
+   if(has_cache_control){
+        if (cacheControl.find("private") != boost::beast::string_view::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Response::hasMustRevalidate(){
+    if(has_cache_control){
+        if (cacheControl.find("must-revalidate") != boost::beast::string_view::npos) {
+            return true;
+        }
+    }
+    return false;
+}
 
 std::vector<char> Response::getResponse(){
     std::vector<char> full_response(res, res + size);

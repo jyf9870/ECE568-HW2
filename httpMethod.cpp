@@ -31,8 +31,6 @@ void HttpMethod::connectRequest(int server_fd, int client_connection_fd){
     }
 }
 void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer[], int length, Cache cache_map){
-    
-    
     std::string client_request(buffer);
     if(!cache_map.contains(client_request)){
         send(server_fd, buffer,length,0); 
@@ -42,7 +40,7 @@ void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer
         send(client_connection_fd,recvBuffer, length2, 0);
         bool if_cache_reponse = false;
         vector<char> full_response;
-        if(response.isChunked() || response.hasNoStore()){
+        if(response.hasPrivate() || response.hasNoStore()){
             //do nothing
         }else{
             full_response = response.getResponse();
@@ -55,16 +53,20 @@ void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer
             send(client_connection_fd,new_recvBuffer, length2, 0);
             if(if_cache_reponse){
                 full_response = response.addToMap(full_response,new_recvBuffer);
-                cache_map.put(client_request, response.getResponse());
             }
         }
-       
-        for (char c : client_request) {
-        std::cout << c << "";
-    }
+        if(if_cache_reponse){
+            cache_map.put(client_request, full_response);
+            for (char c : *cache_map.get(client_request)) {
+            std::cout << c << "";
+            }  
+        }
         return;
+
+
     }else{
         //find from cache --> revalidate/ if expire/ directly
+        return;
 
     }
 }
@@ -80,48 +82,48 @@ void HttpMethod::postRequest(int server_fd, int client_connection_fd){
 
 
 //-------test boost and reponse------------------------------------- 
-//   std::string httpResponse =
-//         "HTTP/1.1 200 OK\r\n"
-//         "Transfer-Encoding: chunked\r\n"
-//         "Last-Modified: Wed, 23 Feb 2023 12:34:56 GMT\r\n"
-//         "Cache-Control: no-cache, no-store, max-age=3600\r\n"
-//         "\r\n"
-//         "5\r\n"
-//         "Hello\r\n"
-//         "6\r\n"
-//         " world\r\n"
-//         "0\r\n"
-//         "\r\n";
 
-//     // Parse the HTTP response using Response class
-//     Response response(httpResponse.data(), httpResponse.size());
 
-//     // Check if the response has chunked encoding
-//     assert(response.isChunked() == true);
+    //     std::string httpResponse =
+    //    "HTTP/1.1 200 OK\r\n"
+    //                  "Cache-Control: private, max-age=3600, must-revalidate\r\n"
+    //                  "ETag: \"123456789\"\r\n"
+    //                  "Content-Type: text/plain\r\n"
+    //                  "Content-Length: 12\r\n"
+    //                  "\r\n";
 
-//     // Get the last modified header
-//     boost::beast::string_view lastModified = response.hasLastModified();
-//     cout<<lastModified<<endl;
+    // // Parse the HTTP response using Response class
+    // Response response(httpResponse.data(), httpResponse.size());
 
-//     // Check if the response has no-store cache control
-//     assert(response.hasNoStore() == true);
+    // // Check if the response has chunked encoding
+    // assert(response.isChunked() == false);
 
-//     // Check if the response has no-cache cache control
-//     assert(response.hasNoCache() == true);
+    // // Get the last modified header
+    // boost::beast::string_view lastModified = response.hasLastModified();
+    // cout<<lastModified<<endl;
 
-//     // Get the ETag header
-//     boost::beast::string_view eTag = response.eTag();
-//     assert(eTag.empty() == true);
+    // // Check if the response has no-store cache control
+    // assert(response.hasNoStore() == false);
 
-//     // Get the max-age value from the cache-control header
-//     int maxAge = response.maxAge();
-//     cout<<maxAge<<endl;
-//     assert(maxAge == 3600);
+    // // Check if the response has no-cache cache control
+    // assert(response.hasNoCache() == false);
+    //  assert(response.hasPrivate() == true);
+    //  assert(response.hasMustRevalidate() == true);
 
-//     // Get the full response as a vector of chars
-//     std::vector<char> fullResponse = response.getResponse();
-//     assert(fullResponse.size() == httpResponse.size());
-//     assert(std::equal(fullResponse.begin(), fullResponse.end(), httpResponse.begin()));
 
-//     std::cout << "All tests passed!\n";
+    // // Get the ETag header
+    // boost::beast::string_view eTag = response.eTag();
+    // cout<<eTag<<endl;
+
+    // // Get the max-age value from the cache-control header
+    // int maxAge = response.maxAge();
+    // cout<<maxAge<<endl;
+    // //assert(maxAge == 3600);
+
+    // // Get the full response as a vector of chars
+    // std::vector<char> fullResponse = response.getResponse();
+    // assert(fullResponse.size() == httpResponse.size());
+    // assert(std::equal(fullResponse.begin(), fullResponse.end(), httpResponse.begin()));
+
+    // std::cout << "All tests passed!\n";
 

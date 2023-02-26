@@ -49,6 +49,8 @@ class Response {
     bool hasNoCache();
     boost::beast::string_view eTag();
     int maxAge();
+    bool hasPrivate();
+    bool hasMustRevalidate();
     std::vector<char> getResponse();
     std::vector<char> addToMap(std::vector<char> full_response, char * following_reponse);
  
