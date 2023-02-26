@@ -6,14 +6,14 @@
 #include <sstream>
 #include <string>
 #include <cstring>
-#include <map>
+#include <unordered_map>
 #include <sstream>
 #include <vector>
 
 using namespace std;
 class Cache {
  private:
-  map <string,vector<char>> responseMap;
+  unordered_map <string,vector<char>> responseMap;
  public:
   void put(string request, vector<char> response);
   bool contains(string request);

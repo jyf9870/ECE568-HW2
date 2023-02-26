@@ -1,7 +1,7 @@
  #include "cache.h"
  #include <iostream> 
- #include <map> 
- 
+ #include <unordered_map> 
+
 void Cache::put(string request, vector<char> response){
     responseMap.insert(std::make_pair(request, response));
     return;
@@ -21,4 +21,3 @@ vector<char>* Cache::get(string request) {
         return nullptr;
     }
 }  
-

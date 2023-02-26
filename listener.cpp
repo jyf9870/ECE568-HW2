@@ -17,6 +17,7 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   Socket socket;
+  Cache cache_map;
   int socket_fd = socket.connectToClient(); //connect to client
   while(true){
     cout << "Waiting for connection on port " << socket.port << endl;
@@ -39,21 +40,7 @@ int main(int argc, char *argv[])
     int server_fd = socket.connectToServer(hostname.c_str(),ctopRequest->getPort().c_str()); //connected successfully from client to proxy and proxy to server
 
 
-    HttpMethod httpMethod;
-
-   const char* response_with_chunk = "HTTP/1.1 200 OK\r\n"
-                                      "Last-Modified: Fri, 17 Sep 2021 14:28:00 GMT\r\n"
-                                      "\r\n"
-                                      "4\r\n"
-                                      "This\r\n"
-                                      "4\r\n"
-                                      " is \r\n"
-                                      "7\r\n"
-                                      "a chunk.\r\n"
-                                      "0\r\n"
-                                      "\r\n";
-    httpMethod.parseHttpResponse(response_with_chunk, strlen(response_with_chunk));
-    
+    HttpMethod httpMethod; 
     if(ctopRequest->getMethod() == "CONNECT"){
       cout<<"I am handling connect TAT!!!!!!"<<endl; 
       httpMethod.connectRequest(server_fd,client_connection_fd);
@@ -62,7 +49,7 @@ int main(int argc, char *argv[])
 
     if(ctopRequest->getMethod() == "GET"){
       cout<<"I am handling get TAT!!!!!!"<<endl; 
-      httpMethod.getRequest(server_fd,client_connection_fd,buffer, length);
+      httpMethod.getRequest(server_fd,client_connection_fd,buffer, length, cache_map);
       cout<<"getgetgetget!!!!!!"<<endl;   
     }
 
