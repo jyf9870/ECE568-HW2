@@ -141,3 +141,7 @@ std::vector<char> Response::addToMap(std::vector<char> full_response, char * fol
     full_response.insert(full_response.end(), following_reponse, following_reponse + sizeof(following_reponse));
     return full_response;
 }
+string Response::toStr(){
+    string str(res);
+    return str;
+}

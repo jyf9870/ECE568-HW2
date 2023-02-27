@@ -76,17 +76,27 @@ void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer
             }       
         //if in the cache
         }else{
-            if(response.hasNoCache()|| (response.maxAge() == -1 && response.hasMustRevalidate())){
+            bool hasMustRevalidate = response.hasMustRevalidate();
+            bool hasNoCache = response.hasNoCache();
+            int maxAge = response.maxAge();
+            boost::beast::string_view eTag = response.eTag();
+            boost::beast::string_view lmdf = response.hasLastModified();
 
-            }else if(response.maxAge() != -1 && response.hasMustRevalidate()){
+            if(hasNoCache|| (maxAge == -1 && hasMustRevalidate)){
+
+            }else if(maxAge != -1 && hasMustRevalidate){
                 
-            }else if(!response.eTag().empty()){
-
-            }else if(!response.hasLastModified().empty()){
-            
-            }else{
-
             }
+            if(!eTag.empty()){
+                string s = addEtag(response.toStr(), eTag.to_string());
+                full_response.insert(full_response.end(), s.c_str(), s.c_str() + sizeof(s.c_str()));
+    
+            }
+            if(!lmdf.empty()){
+                string s = addLMDF(response.toStr(), lmdf.to_string());
+                full_response.insert(full_response.end(), s.c_str(), s.c_str() + sizeof(s.c_str()));
+            }
+            //send to server
 
         }    
         
@@ -162,7 +172,18 @@ void HttpMethod:: recvAll(int server_fd,int client_connection_fd,int currLen,int
         cache_map.put(client_request, full_response);
     }
 }
-       
+string HttpMethod:: addEtag(string full_response, string eTag){
+ std::string add_etag = "If-None-Match: " + eTag + "\r\n";
+    full_response =
+        full_response.insert(full_response.length() - 2, add_etag);
+}
+string HttpMethod:: addLMDF(string full_response,string lmdf){
+ std::string add_lmdf = "If-Modified-Since: " + lmdf + "\r\n";
+    full_response =
+        full_response.insert(full_response.length() - 2, add_lmdf);
+}
+
+
                    
 
 
