@@ -44,36 +44,19 @@ void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer
     send(client_connection_fd,recvBuffer, length2, 0);
 
     bool if_cache_reponse = false;
-    vector<char> full_response;
-
+    vector<char> full_response = response.getResponse(); 
+    bool isChunked = response.isChunked();
+    int hasContentLength = response.hasContentLength();
     if(response.hasPrivate() || response.hasNoStore()){
     //don't cache, directly get
-        if(response.isChunked()){
-            keepSending(server_fd,client_connection_fd,if_cache_reponse, full_response, cache_map, client_request);
-        }else{
-            int hcl = response.hasContentLength();
-            if(hcl == -1){
-                //do nothing??
-            }else{
-                recvAll(server_fd,client_connection_fd,length2,hcl,if_cache_reponse,full_response, cache_map, client_request);
-            }
-        }
+        recvResponse(server_fd,client_connection_fd,length2,if_cache_reponse,full_response, cache_map, client_request,isChunked, hasContentLength);
     }else{
         //cachable
-        full_response = response.getResponse(); 
+        
         //if not in the cache
         if(!cache_map.contains(client_request)){
             if_cache_reponse = true; 
-            if(response.isChunked()){
-                keepSending(server_fd,client_connection_fd,if_cache_reponse, full_response, cache_map, client_request);
-            }else{
-                int hcl = response.hasContentLength();
-                if(hcl == -1){
-                    cache_map.put(client_request,full_response);
-                }else{
-                    recvAll(server_fd,client_connection_fd,length2,hcl,if_cache_reponse,full_response, cache_map, client_request);
-                }
-            }       
+            recvResponse(server_fd,client_connection_fd,length2,if_cache_reponse,full_response, cache_map, client_request,isChunked, hasContentLength);      
         //if in the cache
         }else{
             bool hasMustRevalidate = response.hasMustRevalidate();
@@ -157,6 +140,7 @@ void HttpMethod::keepSending(int server_fd, int client_connection_fd, bool if_ca
     if(if_cache_reponse){
          cache_map.put(client_request, full_response);
     }
+    return;
 }
 void HttpMethod:: recvAll(int server_fd,int client_connection_fd,int currLen,int totalLen,bool if_cache_reponse, vector<char>full_response, Cache cache_map, string client_request){
     while(currLen < totalLen){
@@ -171,19 +155,35 @@ void HttpMethod:: recvAll(int server_fd,int client_connection_fd,int currLen,int
     if(if_cache_reponse){
         cache_map.put(client_request, full_response);
     }
+    return;
 }
 string HttpMethod:: addEtag(string full_response, string eTag){
  std::string add_etag = "If-None-Match: " + eTag + "\r\n";
     full_response =
         full_response.insert(full_response.length() - 2, add_etag);
+    return full_response;
 }
 string HttpMethod:: addLMDF(string full_response,string lmdf){
- std::string add_lmdf = "If-Modified-Since: " + lmdf + "\r\n";
+    std::string add_lmdf = "If-Modified-Since: " + lmdf + "\r\n";
     full_response =
         full_response.insert(full_response.length() - 2, add_lmdf);
+    return full_response;
 }
 
-
+void HttpMethod::recvResponse(int server_fd,int client_connection_fd,int length2,bool if_cache_reponse, vector<char>full_response, Cache cache_map, string client_request,bool isChunked,int hasContentLength){
+    if(isChunked){
+        keepSending(server_fd,client_connection_fd,if_cache_reponse, full_response, cache_map, client_request);
+    }else{
+        if(hasContentLength == -1){
+            if(if_cache_reponse){
+                    cache_map.put(client_request,full_response);
+            }
+        }else{
+            recvAll(server_fd,client_connection_fd,length2,hasContentLength,if_cache_reponse,full_response, cache_map, client_request);
+        }
+    }
+    return;
+}
                    
 
 
