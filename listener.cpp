@@ -9,7 +9,6 @@
 #include <mutex>
 #include "request.h"
 #include "socket.h"
-#include "requirement.h"
 #include "httpMethod.h"
 
 using namespace std;

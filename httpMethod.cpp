@@ -36,6 +36,11 @@ void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer
         send(server_fd, buffer,length,0); 
         char recvBuffer[100000];
         int length2 = recv(server_fd, recvBuffer, 100000, 0);
+        if(length2 < 0){
+            //add log to log file
+            cout<<"400 error"<<endl;
+
+        }
         Response response(recvBuffer, sizeof(recvBuffer));
         send(client_connection_fd,recvBuffer, length2, 0);
         bool if_cache_reponse = false;
@@ -52,7 +57,7 @@ void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer
             if(length2 <= 0) break;
             send(client_connection_fd,new_recvBuffer, length2, 0);
             if(if_cache_reponse){
-                full_response = response.addToMap(full_response,new_recvBuffer);
+                full_response.insert(full_response.end(), new_recvBuffer, new_recvBuffer + sizeof(new_recvBuffer));
             }
         }
         if(if_cache_reponse){
