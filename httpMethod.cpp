@@ -32,48 +32,66 @@ void HttpMethod::connectRequest(int server_fd, int client_connection_fd){
 }
 void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer[], int length, Cache cache_map){
     std::string client_request(buffer);
-    if(!cache_map.contains(client_request)){
-        send(server_fd, buffer,length,0); 
-        char recvBuffer[100000];
-        int length2 = recv(server_fd, recvBuffer, 100000, 0);
-        if(length2 < 0){
-            //add log to log file
-            cout<<"400 error"<<endl;
+    send(server_fd, buffer,length,0); 
+    char recvBuffer[100000];
+    int length2 = recv(server_fd, recvBuffer, 100000, 0);
+    if(length2 < 0){
+        //add log to log file
+        cout<<"400 error"<<endl;
+    }     
 
-        }
-        Response response(recvBuffer, sizeof(recvBuffer));
-        send(client_connection_fd,recvBuffer, length2, 0);
-        bool if_cache_reponse = false;
-        vector<char> full_response;
-        if(response.hasPrivate() || response.hasNoStore()){
-            //do nothing
+    Response response(recvBuffer, sizeof(recvBuffer));     
+    send(client_connection_fd,recvBuffer, length2, 0);
+
+    bool if_cache_reponse = false;
+    vector<char> full_response;
+
+    if(response.hasPrivate() || response.hasNoStore()){
+    //don't cache, directly get
+        if(response.isChunked()){
+            keepSending(server_fd,client_connection_fd,if_cache_reponse, full_response, cache_map, client_request);
         }else{
-            full_response = response.getResponse();
-            if_cache_reponse = true;
-        }
-        while(length2 > 0){
-            char new_recvBuffer[100000];
-            length2 = recv(server_fd, new_recvBuffer, 100000, 0);
-            if(length2 <= 0) break;
-            send(client_connection_fd,new_recvBuffer, length2, 0);
-            if(if_cache_reponse){
-                full_response.insert(full_response.end(), new_recvBuffer, new_recvBuffer + sizeof(new_recvBuffer));
+            int hcl = response.hasContentLength();
+            if(hcl == -1){
+                //do nothing??
+            }else{
+                recvAll(server_fd,client_connection_fd,length2,hcl,if_cache_reponse,full_response, cache_map, client_request);
             }
         }
-        if(if_cache_reponse){
-            cache_map.put(client_request, full_response);
-            for (char c : *cache_map.get(client_request)) {
-            std::cout << c << "";
-            }  
-        }
-        return;
-
-
     }else{
-        //find from cache --> revalidate/ if expire/ directly
-        return;
+        //cachable
+        full_response = response.getResponse(); 
+        //if not in the cache
+        if(!cache_map.contains(client_request)){
+            if_cache_reponse = true; 
+            if(response.isChunked()){
+                keepSending(server_fd,client_connection_fd,if_cache_reponse, full_response, cache_map, client_request);
+            }else{
+                int hcl = response.hasContentLength();
+                if(hcl == -1){
+                    cache_map.put(client_request,full_response);
+                }else{
+                    recvAll(server_fd,client_connection_fd,length2,hcl,if_cache_reponse,full_response, cache_map, client_request);
+                }
+            }       
+        //if in the cache
+        }else{
+            if(response.hasNoCache()|| (response.maxAge() == -1 && response.hasMustRevalidate())){
 
+            }else if(response.maxAge() != -1 && response.hasMustRevalidate()){
+                
+            }else if(!response.eTag().empty()){
+
+            }else if(!response.hasLastModified().empty()){
+            
+            }else{
+
+            }
+
+        }    
+        
     }
+    return;
 }
    
 
@@ -116,25 +134,55 @@ void HttpMethod::postRequest(int server_fd, int client_connection_fd, char buffe
     }
 }
 
+void HttpMethod::keepSending(int server_fd, int client_connection_fd, bool if_cache_reponse, vector<char>full_response, Cache cache_map, string client_request){
+    while(true){
+        char new_recvBuffer[100000];
+        int length3 = recv(server_fd, new_recvBuffer, 100000, 0);
+        if(length3 <= 0) break;
+        send(client_connection_fd,new_recvBuffer, length3, 0);
+        if(if_cache_reponse){
+            full_response.insert(full_response.end(), new_recvBuffer, new_recvBuffer + sizeof(new_recvBuffer));
+        }
+    }
+    if(if_cache_reponse){
+         cache_map.put(client_request, full_response);
+    }
+}
+void HttpMethod:: recvAll(int server_fd,int client_connection_fd,int currLen,int totalLen,bool if_cache_reponse, vector<char>full_response, Cache cache_map, string client_request){
+    while(currLen < totalLen){
+        char new_recvBuffer[100000];
+        int tempLength = recv(server_fd, new_recvBuffer, 100000, 0);
+        currLen += tempLength;
+        send(client_connection_fd,new_recvBuffer, tempLength, 0);
+        if(if_cache_reponse){
+            full_response.insert(full_response.end(), new_recvBuffer, new_recvBuffer + sizeof(new_recvBuffer));
+        }
+    }
+    if(if_cache_reponse){
+        cache_map.put(client_request, full_response);
+    }
+}
+       
+                   
 
 
 
 //-------test boost and reponse------------------------------------- 
 
+//                 std::string httpResponse =
+//        "HTTP/1.1 200 OK\r\n"
+//                      "Cache-Control: private, max-age=3600, must-revalidate\r\n"
+//                      "ETag: \"123456789\"\r\n"
+//                      "Content-Type: text/plain\r\n"
+//                      "Content-Length: 12\r\n"
+//                      "\r\n";
 
-    //     std::string httpResponse =
-    //    "HTTP/1.1 200 OK\r\n"
-    //                  "Cache-Control: private, max-age=3600, must-revalidate\r\n"
-    //                  "ETag: \"123456789\"\r\n"
-    //                  "Content-Type: text/plain\r\n"
-    //                  "Content-Length: 12\r\n"
-    //                  "\r\n";
+//     // Parse the HTTP response using Response class
+//     Response response(httpResponse.data(), httpResponse.size());
 
-    // // Parse the HTTP response using Response class
-    // Response response(httpResponse.data(), httpResponse.size());
-
-    // // Check if the response has chunked encoding
-    // assert(response.isChunked() == false);
+//     // Check if the response has chunked encoding
+//     assert(response.isChunked() == false);
+//  cout<<response.hasContentLength()<<endl;
 
     // // Get the last modified header
     // boost::beast::string_view lastModified = response.hasLastModified();

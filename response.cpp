@@ -83,7 +83,6 @@ boost::beast::string_view Response::eTag(){
 
 int Response::maxAge(){
     // Get the Cache-Control header
-   
     if (has_cache_control) {
         // Find the max-age directive
         size_t pos = cacheControl.find("max-age=");
@@ -122,6 +121,15 @@ bool Response::hasMustRevalidate(){
         }
     }
     return false;
+}
+int Response::hasContentLength(){
+    string str(res);
+    size_t pos = str.find("Content-Length:");
+    if(pos!= std::string::npos){
+        size_t pos2 = str.find("\r\n",pos);
+        return std::stoi(str.substr(pos+16,pos2));
+    }
+    return -1;  
 }
 
 std::vector<char> Response::getResponse(){

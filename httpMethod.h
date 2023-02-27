@@ -15,5 +15,6 @@ class HttpMethod {
     void connectRequest(int server_fd, int client_connection_fd);
     void getRequest(int server_fd, int client_connection_fd,char buffer[], int length,Cache cache_map);
     void postRequest(int server_fd, int client_connection_fd, char buffer[], int length);
-  
+    void keepSending(int server_fd, int client_connection_fd, bool if_cache_reponse, vector<char>full_response, Cache cache_map, string client_request);
+ void recvAll(int server_fd,int client_connection_fd,int currLen,int totalLen,bool if_cache_reponse, vector<char>full_response, Cache cache_map, string client_request);
 };
