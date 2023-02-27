@@ -72,10 +72,43 @@ void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer
 }
    
 
+void HttpMethod::postRequest(int server_fd, int client_connection_fd, char buffer[], int length){
+    // Parse the HTTP request
+    http::request_parser<http::dynamic_body> parser;
+    boost::beast::error_code ec;
+    parser.put(boost::asio::buffer(buffer, length), ec);
+    if (ec) {
+        std::cerr << "Error parsing HTTP request: " << ec.message() << std::endl;
+        return;
+    }
+    const auto& req = parser.get();
 
-void HttpMethod::postRequest(int server_fd, int client_connection_fd){
+    // Forward the request to the server
+    std::ostringstream req_stream;
+    req_stream << req;
+    std::string req_str = req_stream.str();
+    if (send(server_fd, req_str.data(), req_str.size(), 0) == -1) {
+        std::cerr << "Error sending request to server: " << strerror(errno) << std::endl;
+        return;
+    }
 
-    return;
+    // Receive the response from the server and relay it to the client
+    std::array<char, 100000> recv_buf;
+    while (true) {
+        int n = recv(server_fd, recv_buf.data(), recv_buf.size(), 0);
+        if (n == -1) {
+            std::cerr << "Error receiving response from server: " << strerror(errno) << std::endl;
+            return;
+        } else if (n == 0) {
+            // Server closed the connection
+            return;
+        } else {
+            if (send(client_connection_fd, recv_buf.data(), n, 0) == -1) {
+                std::cerr << "Error relaying response to client: " << strerror(errno) << std::endl;
+                return;
+            }
+        }
+    }
 }
 
 

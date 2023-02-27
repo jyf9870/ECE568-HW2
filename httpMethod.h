@@ -14,6 +14,6 @@ class HttpMethod {
     public:
     void connectRequest(int server_fd, int client_connection_fd);
     void getRequest(int server_fd, int client_connection_fd,char buffer[], int length,Cache cache_map);
-    void postRequest(int server_fd, int client_connection_fd);
+    void postRequest(int server_fd, int client_connection_fd, char buffer[], int length);
   
 };
