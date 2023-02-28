@@ -3,7 +3,7 @@ clear
 
 make
 
-./main
+sudo ./main
 
 while true
 do

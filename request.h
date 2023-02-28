@@ -7,6 +7,7 @@
 #include <string>
 #include <cstring>
 #include <map>
+#include <ctime>
 #include <sstream>
 #include <vector>
 
@@ -19,6 +20,10 @@ class Request {
   string methodContent;
   string methodHttp;
   string port;
+  string request_line;
+  string IP;
+  string time;
+  
  public:
   Request(string request) : request(request) {
     readRequest();
@@ -28,4 +33,7 @@ class Request {
   string getMethod() const;
   string getMethodContent() const;
   string getPort() const;
+  string getRequesLine() const;
+  string getIP() const;
+  string getTime() const;
 };

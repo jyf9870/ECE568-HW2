@@ -17,8 +17,8 @@
 
 using namespace std;
 
- class client_info {
-  public:
+class Client_Info {
+ public:
   int client_connection_fd;
   int client_id;
   Socket socket;
@@ -26,17 +26,26 @@ using namespace std;
 };
 
 pthread_mutex_t myMutex = PTHREAD_MUTEX_INITIALIZER;
-std::ofstream logFile("/var/log/erss/proxy.log");
+std::ofstream logFile(
+    "/var/log/erss/proxy.log");  // If you don't have the erss directory under /var/log, you need to create that directory fisrt.
 
-void * request_handle(void * curr_client_info) {
+void addToLog(std::ofstream & logFile, const std::string & message) {
+  pthread_mutex_lock(&myMutex);
+  logFile << message << std::endl;
+  pthread_mutex_unlock(&myMutex);
+}
+
+void * request_handle(void * client_info) {
+  Client_Info * curr_client_info = (Client_Info *)client_info;
   cout << "into a new thread" << endl;
-  int client_connection_fd = ((client_info *)curr_client_info)->client_connection_fd;
-  
+  int client_connection_fd = curr_client_info->client_connection_fd;
+
   char buffer[65536];
   cout << "waiting for the request from client!" << endl;
   int length = recv(client_connection_fd, buffer, 65536, 0);
   string request = string(buffer, length);
   Request * ctopRequest = new Request(request);  //handle requests
+
   /*
     * this is an error handing part
     */
@@ -47,8 +56,12 @@ void * request_handle(void * curr_client_info) {
     return NULL;
   }
 
+  stringstream request_ss;
+  request_ss << curr_client_info->client_id << ": " << ctopRequest->getTime();
+  addToLog(logFile, request_ss.str());  // add to log: ID: "REQUEST" from IPFROM @ TIME
+
   string hostname = ctopRequest->getRequestMap().find("Host")->second;
-  int server_fd = ((client_info *)curr_client_info)->socket.connectToServer(
+  int server_fd = curr_client_info->socket.connectToServer(
       hostname.c_str(),
       ctopRequest->getPort()
           .c_str());  //connected successfully from client to proxy and proxy to server
@@ -63,7 +76,8 @@ void * request_handle(void * curr_client_info) {
 
   if (ctopRequest->getMethod() == "GET") {
     cout << "I am handling get TAT!!!!!!" << endl;
-    httpMethod.getRequest(server_fd, client_connection_fd, buffer, length, ((client_info *)curr_client_info)->cache_map);
+    httpMethod.getRequest(
+        server_fd, client_connection_fd, buffer, length, curr_client_info->cache_map);
     cout << "getgetgetget!!!!!!" << endl;
     return NULL;
   }
@@ -75,8 +89,8 @@ void * request_handle(void * curr_client_info) {
     return NULL;
   }
 
-   close(server_fd);
-   close(client_connection_fd);
+  close(server_fd);
+  close(client_connection_fd);
   return NULL;
 }
 
@@ -84,6 +98,12 @@ int main(int argc, char * argv[]) {
   Socket socket;
   Cache cache_map;
   int socket_fd = socket.connectToClient();  //connect to client
+  if (socket_fd == -1) {
+    const string message = "Proxxy can not create server socket for the client!";
+    cout << message << endl;
+    addToLog(logFile, message);
+    return -1;
+  }
   int client_id = 0;
   while (true) {
     cout << "Waiting for connection on port " << socket.port << endl;
@@ -98,7 +118,7 @@ int main(int argc, char * argv[]) {
     }
     pthread_t thread;
     pthread_mutex_lock(&myMutex);
-    client_info * curr_client_info = new client_info();
+    Client_Info * curr_client_info = new Client_Info();
     curr_client_info->client_connection_fd = client_connection_fd;
     curr_client_info->client_id = client_id;
     curr_client_info->cache_map = cache_map;
@@ -108,10 +128,8 @@ int main(int argc, char * argv[]) {
     pthread_mutex_unlock(&myMutex);
     cout << "try to create new thread" << endl;
     int res = pthread_create(&thread, NULL, request_handle, curr_client_info);
-    if (res != 0){
-      cout << "Failed to create new thread" <<endl;
+    if (res != 0) {
+      cout << "Failed to create new thread" << endl;
     }
   }
 }
-
-
