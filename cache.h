@@ -20,4 +20,5 @@ class Cache {
   void put(string request, vector<char> response);
   bool contains(string request);
   vector<char>* get(string request);
+  int  size();
 };

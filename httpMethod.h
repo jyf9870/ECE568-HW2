@@ -19,6 +19,7 @@ class HttpMethod {
     const char * handleMapResponse(vector<char> data);
     void getEntire(int server_fd, int client_connection_fd, char buffer[], int length,Cache & cache_map );
     void sendFromMap(int client_connection_fd, vector<char> response);
-    void checkExpired();
+    bool is_expired(const std::string& date_str, int max_age, const std::string& expires_str);
+    int requestLength(char * server_msg, int mes_len); 
  
 };
