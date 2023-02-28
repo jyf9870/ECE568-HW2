@@ -8,6 +8,12 @@ void Cache::put(string request, vector<char> response) {
   responseMap.insert(std::make_pair(request, response));
   return;
 }
+
+int Cache::size() {
+ return responseMap.size();
+}
+
+
 bool Cache::contains(string request) {
   std::lock_guard<std::mutex> lock(cache_mutex);
   if (responseMap.count(request) > 0) {

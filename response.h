@@ -55,6 +55,8 @@ class Response {
     std::vector<char> getResponse();
     std::vector<char> addToMap(std::vector<char> full_response, char * following_reponse);
     string toStr();
+    string hasExpire();
+    string hasDate();
  
 
 };

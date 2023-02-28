@@ -132,6 +132,27 @@ int Response::hasContentLength(){
     return -1;  
 }
 
+string Response::hasExpire(){
+    string str(res);
+    size_t pos = str.find("Expires: ");
+    if(pos!= std::string::npos){
+        size_t pos2 = str.find("\r\n",pos);
+        return str.substr(pos+9,pos2);
+    }
+    return "";  
+}
+
+string Response::hasDate(){
+    string str(res);
+    size_t pos = str.find("Date: ");
+    if(pos!= std::string::npos){
+        size_t pos2 = str.find("\r\n",pos);
+        return str.substr(pos+6,pos2);
+    }
+    return "";  
+}
+
+
 std::vector<char> Response::getResponse(){
     std::vector<char> full_response(res, res + size);
     return full_response;
