@@ -17,14 +17,14 @@ using namespace std;
 
 class HttpMethod {
  public:
-  void connectRequest(int server_fd, int client_connection_fd);
+  void connectRequest(int server_fd, int client_connection_fd, int clientID, string request_line, string server_host_name);
   void getRequest(int server_fd,
                   int client_connection_fd,
                   char buffer[],
                   int length,
                   Cache & cache_map,
-                  int clientID);
-  void postRequest(int server_fd, int client_connection_fd, char buffer[], int length);
+                  int clientID, string request_line, string server_host_name);
+  void postRequest(int server_fd, int client_connection_fd, char buffer[], int length, int clientID, string request_line, string server_hostname);
   void recvResponse(int server_fd,
                     int client_connection_fd,
                     int currLen,
@@ -39,7 +39,7 @@ class HttpMethod {
                  int client_connection_fd,
                  char buffer[],
                  int length,
-                 Cache & cache_map);
+                 Cache & cache_map, int clientID, string server_hostname);
   void sendFromMap(int client_connection_fd, vector<char> response);
   bool is_expired(const std::string & date_str,
                   int max_age,

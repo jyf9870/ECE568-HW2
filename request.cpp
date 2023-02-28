@@ -55,6 +55,7 @@ void Request::readRequest() {
             size_t position = body.find_first_of(":\n");
             if (position != string::npos) {
               string hostname = body.substr(0, position);
+              this->server_hostname = hostname;
               port = body.substr(position + 1);
               requestMap.insert(pair<string, string>(name, hostname));
             }
@@ -107,4 +108,8 @@ string Request::getIP() const {
 }
 string Request::getTime() const {
   return this->time;
+}
+
+string Request::get_server_hostname() const {
+  return this->server_hostname;
 }

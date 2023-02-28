@@ -21,16 +21,16 @@ void addCacheMessage(int clientID, const std::string & message) {
 }
 
 // Convert GMT time string to UTC time string in asctime format
-std::string convert_expire_time(const std::string& gmt_time_str) {
-    std::tm tm = {};
-    std::istringstream iss(gmt_time_str);
-    iss >> std::get_time(&tm, "%a, %d %b %Y %H:%M:%S %Z");
+std::string convert_expire_time(const std::string & gmt_time_str) {
+  std::tm tm = {};
+  std::istringstream iss(gmt_time_str);
+  iss >> std::get_time(&tm, "%a, %d %b %Y %H:%M:%S %Z");
 
-    std::time_t t = std::mktime(&tm);
-    char buffer[30];
-    std::strftime(buffer, sizeof(buffer), "%c", std::gmtime(&t));
+  std::time_t t = std::mktime(&tm);
+  char buffer[30];
+  std::strftime(buffer, sizeof(buffer), "%c", std::gmtime(&t));
 
-    return buffer;
+  return buffer;
 }
 
 // funtion that takes a client socket descriptor and returns its IP as a stirng
@@ -50,8 +50,21 @@ std::string getClientIP(int client_connection_fd) {
   }
 }
 
-void HttpMethod::connectRequest(int server_fd, int client_connection_fd) {
+void HttpMethod::connectRequest(int server_fd,
+                                int client_connection_fd,
+                                int clientID,
+                                string request_line,
+                                string server_hostname) {
+  stringstream request_ss;
+  request_ss << clientID << ": Requesting \"" << request_line << "\" from " << server_hostname;
+  addToLog(request_ss.str());  // ID: Requesting "REQUEST" from SERVER
   send(client_connection_fd, "HTTP/1.1 200 OK\r\n\r\n", 19, 0);
+
+  stringstream response_ss;
+  response_ss << clientID << ": Received \""
+              << "HTTP/1.1 200 OK"
+              << "\" from " << server_hostname;
+  addToLog(response_ss.str());  // ID: Received "RESPONSE" from	SERVER
 
   while (true) {
     fd_set read_fd;
@@ -87,7 +100,9 @@ void HttpMethod::getRequest(int server_fd,
                             char buffer[],
                             int length,
                             Cache & cache_map,
-                            int clientID) {
+                            int clientID,
+                            string request_line,
+                            string server_hostname) {
   std::string client_request(buffer);
 
   //if not in the cache
@@ -95,7 +110,17 @@ void HttpMethod::getRequest(int server_fd,
   if (!cache_map.contains(client_request)) {
     addCacheMessage(clientID, "not in cache");  // add to log: ID: not in cache
 
-    getEntire(server_fd, client_connection_fd, buffer, length, cache_map);
+    stringstream request_ss;
+    request_ss << clientID << ": Requesting \"" << request_line << "\" from " << server_hostname;
+    addToLog(request_ss.str());  // ID: Requesting "REQUEST" from SERVER
+
+    getEntire(server_fd,
+              client_connection_fd,
+              buffer,
+              length,
+              cache_map,
+              clientID,
+              server_hostname);
     cout << cache_map.size() << "inside map" << endl;
   }
   //if in the cache
@@ -118,8 +143,17 @@ void HttpMethod::getRequest(int server_fd,
       if (eTag.empty() && lmdf.empty()) {
         // ADD TO LOG: NEET TO REVALIDNATE
         addCacheMessage(clientID, "in cache, requires validation");
-
-        getEntire(server_fd, client_connection_fd, buffer, length, cache_map);
+        stringstream request_ss_1;
+        request_ss_1 << clientID << ": Requesting \"" << request_line << "\" from "
+                     << server_hostname;
+        addToLog(request_ss_1.str());  // ID: Requesting "REQUEST" from SERVER
+        getEntire(server_fd,
+                  client_connection_fd,
+                  buffer,
+                  length,
+                  cache_map,
+                  clientID,
+                  server_hostname);
       }
       else {
         //has eTag or Last-modified: revalidate
@@ -157,7 +191,17 @@ void HttpMethod::getRequest(int server_fd,
           // ADD TO LOG: IN CACHE, NEED TO REVALIDATE
           addCacheMessage(clientID, "in cache, requires validation");
 
-          getEntire(server_fd, client_connection_fd, buffer, length, cache_map);
+          stringstream request_ss_2;
+          request_ss_2 << clientID << ": Requesting \"" << request_line << "\" from "
+                       << server_hostname;
+          addToLog(request_ss_2.str());  // ID: Requesting "REQUEST" from SERVER
+          getEntire(server_fd,
+                    client_connection_fd,
+                    buffer,
+                    length,
+                    cache_map,
+                    clientID,
+                    server_hostname);
         }
       }
     }
@@ -174,7 +218,13 @@ void HttpMethod::getRequest(int server_fd,
         addCacheMessage(clientID, cache_expire.str());
         // ADD TO LOG: ID: in cache, requires validation
         addCacheMessage(clientID, "in cache, requires validation");
-        getEntire(server_fd, client_connection_fd, buffer, length, cache_map);
+        getEntire(server_fd,
+                  client_connection_fd,
+                  buffer,
+                  length,
+                  cache_map,
+                  clientID,
+                  server_hostname);
       }
       else {
         //if not expire, send from cache
@@ -195,7 +245,10 @@ void HttpMethod::getRequest(int server_fd,
 void HttpMethod::postRequest(int server_fd,
                              int client_connection_fd,
                              char buffer[],
-                             int length) {
+                             int length,
+                             int clientID,
+                             string request_line,
+                             string server_hostname) {
   std::string client_request(buffer);
   int total = requestLength(buffer, length);
 
@@ -212,6 +265,9 @@ void HttpMethod::postRequest(int server_fd,
   }
 
   //ID: Requesting "REQUEST" from SERVER
+  stringstream request_ss_1;
+  request_ss_1 << clientID << ": Requesting \"" << request_line << "\" from " << server_hostname;
+  addToLog(request_ss_1.str());  // ID: Requesting "REQUEST" from SERVER
 
   if (send(server_fd, client_request.c_str(), length, 0) == -1) {
     std::cerr << "Error sending request to server: " << strerror(errno) << std::endl;
@@ -220,11 +276,24 @@ void HttpMethod::postRequest(int server_fd,
   char recvBuffer[100000];
 
   //ID: Received "RESPONSE" from	SERVER
+
   int n = recv(server_fd, recvBuffer, 100000, 0);
   if (n == -1) {
     std::cerr << "Error receiving response from server: " << strerror(errno) << std::endl;
     return;
   }
+
+  string str(recvBuffer);
+  int responseHeader = str.find("\r\n");
+  string resp_res;
+  if (responseHeader != string::npos) {
+    resp_res = str.substr(0, responseHeader);
+  }
+
+  stringstream response_ss;
+  response_ss << clientID << ": Received \"" << resp_res << "\" from " << server_hostname;
+  addToLog(response_ss.str());  // ID: Requesting "REQUEST" from SERVER
+
   if (send(client_connection_fd, recvBuffer, n, 0) <= 0) {
     std::cerr << "Error relaying response to client: " << strerror(errno) << std::endl;
     return;
@@ -335,7 +404,9 @@ void HttpMethod::getEntire(int server_fd,
                            int client_connection_fd,
                            char buffer[],
                            int length,
-                           Cache & cache_map) {
+                           Cache & cache_map,
+                           int clientID,
+                           string server_hostname) {
   //send request ro server
 
   // ID: Requesting "REQUEST" from SERVER
@@ -349,6 +420,18 @@ void HttpMethod::getEntire(int server_fd,
     //add log to log file
     cout << "400 error" << endl;
   }
+
+  string str(recvBuffer);
+  int responseHeader = str.find("\r\n");
+  string resp_res;
+  if (responseHeader != string::npos) {
+    resp_res = str.substr(0, responseHeader);
+  }
+
+  stringstream response_ss;
+  response_ss << clientID << ": Received \"" << resp_res << "\" from " << server_hostname;
+  addToLog(response_ss.str());  // ID: Requesting "REQUEST" from SERVER
+
   Response response(recvBuffer, sizeof(recvBuffer));
   send(client_connection_fd, recvBuffer, length2, 0);
 

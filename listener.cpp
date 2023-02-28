@@ -47,8 +47,7 @@ void * request_handle(void * client_info) {
       ctopRequest->getMethod() != "CONNECT") {
     string req400 = "HTTP/1.1 400 Bad Request";
     stringstream bad_request_ss;
-    bad_request_ss << curr_client_info->client_id << "Malformed	request: \"" << req400
-                   << "\"";
+    bad_request_ss << curr_client_info->client_id << ": Responding \"" << req400 << "\"";
     addToLog(
         bad_request_ss
             .str());  // 	If the	proxy	receives	a	malformed	request,	it	MUST	reply	with	a	400	error	code.
@@ -57,8 +56,8 @@ void * request_handle(void * client_info) {
   }
 
   stringstream request_ss;
-  request_ss << curr_client_info->client_id << ": " << ctopRequest->getRequesLine()
-             << " from " << getClientIP(client_connection_fd) << " @ "
+  request_ss << curr_client_info->client_id << ": \"" << ctopRequest->getRequesLine()
+             << "\" from " << getClientIP(client_connection_fd) << " @ "
              << ctopRequest->getTime();
   addToLog(request_ss.str());  // add to log: ID: "REQUEST" from IPFROM @ TIME
 
@@ -71,7 +70,11 @@ void * request_handle(void * client_info) {
   HttpMethod httpMethod;
   if (ctopRequest->getMethod() == "CONNECT") {
     cout << "I am handling connect TAT!!!!!!" << endl;
-    httpMethod.connectRequest(server_fd, client_connection_fd);
+    httpMethod.connectRequest(server_fd,
+                              client_connection_fd,
+                              curr_client_info->client_id,
+                              ctopRequest->getRequesLine(),
+                              ctopRequest->get_server_hostname());
     cout << "CONNECTCONNECTCONNECTCONNECT!!!!!!" << endl;
     return NULL;
   }
@@ -83,14 +86,22 @@ void * request_handle(void * client_info) {
                           buffer,
                           length,
                           curr_client_info->cache_map,
-                          curr_client_info->client_id);
+                          curr_client_info->client_id,
+                          ctopRequest->getRequesLine(),
+                          ctopRequest->get_server_hostname());
     cout << "getgetgetget!!!!!!" << endl;
     return NULL;
   }
 
   if (ctopRequest->getMethod() == "POST") {
     cout << "I am handling post TAT!!!!!!" << endl;
-    httpMethod.postRequest(server_fd, client_connection_fd, buffer, length);
+    httpMethod.postRequest(server_fd,
+                           client_connection_fd,
+                           buffer,
+                           length,
+                           curr_client_info->client_id,
+                           ctopRequest->getRequesLine(),
+                           ctopRequest->get_server_hostname());
     cout << "postpostpostpost!!!!!!" << endl;
     return NULL;
   }

@@ -22,6 +22,7 @@ class Request {
   string request_line;
   string IP;
   string time;
+  string server_hostname;
 
  public:
   Request(string _request) : request(_request) { readRequest(); }
@@ -33,4 +34,5 @@ class Request {
   string getRequesLine() const;
   string getIP() const;
   string getTime() const;
+  string get_server_hostname() const;
 };
