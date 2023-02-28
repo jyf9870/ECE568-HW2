@@ -3,19 +3,18 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <map>
 #include <sstream>
 #include <string>
-#include <cstring>
-#include <map>
-#include <ctime>
-#include <sstream>
 #include <vector>
 
 using namespace std;
 class Request {
  private:
   string request;
-  map <string,string> requestMap;
+  map<string, string> requestMap;
   string method;
   string methodContent;
   string methodHttp;
@@ -23,11 +22,9 @@ class Request {
   string request_line;
   string IP;
   string time;
-  
+
  public:
-  Request(string _request) : request(_request) {
-    readRequest();
-  }
+  Request(string _request) : request(_request) { readRequest(); }
   void readRequest();
   map<string, string> getRequestMap() const;
   string getMethod() const;

@@ -30,7 +30,6 @@ class Response {
     boost::beast::string_view cacheControl;
 
     // MyTime expire_time;
-    // std::string exp_str;
     // MyTime response_time;
     // bool must_revalidate;
     // two validators
@@ -58,5 +57,4 @@ class Response {
     string hasExpire();
     string hasDate();
  
-
 };

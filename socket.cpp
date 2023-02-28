@@ -14,7 +14,7 @@ int Socket::connectToClient(){
   struct addrinfo host_info;
   struct addrinfo *host_info_list;
   const char *hostname = NULL;
-  port     = "8000";
+  port     = "12345"; 
 
   memset(&host_info, 0, sizeof(host_info));
 
