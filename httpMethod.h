@@ -19,5 +19,6 @@ class HttpMethod {
     const char * handleMapResponse(vector<char> data);
     void getEntire(int server_fd, int client_connection_fd, char buffer[], Cache & cache_map );
     void sendFromMap(int client_connection_fd, vector<char> response);
+    void checkExpired();
  
 };

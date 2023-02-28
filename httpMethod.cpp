@@ -93,7 +93,7 @@ void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer
         else if(maxAge != -1 && hasMustRevalidate){
           //if expired, revalidate
           if(1){
-//checkExpired(int maxAge)
+          //checkExpired(int maxAge)
           }else{
             //if not expire, send from cache
             sendFromMap(client_connection_fd, *cache_map.get(client_request));
@@ -103,10 +103,6 @@ void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer
           sendFromMap(client_connection_fd, *cache_map.get(client_request));
         }
       }
-
-        //send to server
-
-
     }
         
 
