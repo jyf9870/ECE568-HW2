@@ -1,4 +1,6 @@
+#include <arpa/inet.h>
 #include <netdb.h>
+#include <netinet/in.h>
 #include <pthread.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -35,6 +37,20 @@ void addToLog(std::ofstream & logFile, const std::string & message) {
   pthread_mutex_unlock(&myMutex);
 }
 
+// funtion that takes a client socket descriptor and returns its IP as a stirng
+std::string getClientIP(int client_connection_fd) {
+    struct sockaddr_in client_address;
+    socklen_t client_address_len = sizeof(client_address);
+    if (getpeername(client_connection_fd, (struct sockaddr*)&client_address, &client_address_len) == 0) {
+        char client_ip[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN);
+        return std::string(client_ip);
+    } else {
+        // handle error
+        return "";
+    }
+}
+
 void * request_handle(void * client_info) {
   Client_Info * curr_client_info = (Client_Info *)client_info;
   cout << "into a new thread" << endl;
@@ -57,7 +73,7 @@ void * request_handle(void * client_info) {
   }
 
   stringstream request_ss;
-  request_ss << curr_client_info->client_id << ": " << ctopRequest->getTime();
+  request_ss << curr_client_info->client_id << ": " << ctopRequest->getRequesLine() << " from " << getClientIP(client_connection_fd) << " @ " << ctopRequest->getTime();
   addToLog(logFile, request_ss.str());  // add to log: ID: "REQUEST" from IPFROM @ TIME
 
   string hostname = ctopRequest->getRequestMap().find("Host")->second;

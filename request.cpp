@@ -6,7 +6,7 @@ using namespace std;
 // fuction that returns a string of time in	UTC, with	a format given by	asctime
 string getCurrTime() {
   // Get the current time in UTC
-  std::time_t now = std::time(nullptr);
+  std::time_t now = std::time(NULL);
 
   // Convert the time to a tm structure in UTC
   std::tm * tm_utc = std::gmtime(&now);
@@ -22,12 +22,17 @@ void Request::readRequest() {
   this->time = getCurrTime();  // initialize field: time
   size_t pos = 0;
   string delimiter = ": ";
-  stringstream ss(request);
+  stringstream ss(this->request);
+  int lineInd = 0;
   string line;
   int count = 0;
   while (getline(ss, line, '\r')) {
     if (!line.empty()) {
       // remove the '\n' character at the end of the line
+      if(lineInd == 0){
+        this->request_line = line;
+        lineInd++;
+      }
       if (line.back() == '\n') {
         line.pop_back();
       }

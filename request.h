@@ -25,7 +25,7 @@ class Request {
   string time;
   
  public:
-  Request(string request) : request(request) {
+  Request(string _request) : request(_request) {
     readRequest();
   }
   void readRequest();
