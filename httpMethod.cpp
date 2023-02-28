@@ -32,15 +32,38 @@ void HttpMethod::connectRequest(int server_fd, int client_connection_fd){
 }
 void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer[], int length, Cache cache_map){
     std::string client_request(buffer);
-    send(server_fd, buffer,length,0); 
-    char recvBuffer[100000];
-    int length2 = recv(server_fd, recvBuffer, 100000, 0);
-    if(length2 < 0){
-        //add log to log file
-        cout<<"400 error"<<endl;
-    }     
+    
+    //if not in the cache
+    if(!cache_map.contains(client_request)){
+        send(server_fd, buffer,length,0); 
+        char recvBuffer[100000];
+        int length2 = recv(server_fd, recvBuffer, 100000, 0);
+        if(length2 < 0){
+            //add log to log file
+            cout<<"400 error"<<endl;
+        }     
+        Response response(recvBuffer, sizeof(recvBuffer)); 
+        send(client_connection_fd,recvBuffer, length2, 0);
+        bool if_cache_reponse = false;
+        vector<char> full_response = response.getResponse(); 
+        bool isChunked = response.isChunked();
+        int hasContentLength = response.hasContentLength();
+        if(response.hasPrivate() || response.hasNoStore()){
+        //don't cache, directly get
+            recvResponse(server_fd,client_connection_fd,length2,if_cache_reponse,full_response, cache_map, client_request,isChunked, hasContentLength);
+        }else{
+            if_cache_reponse = true; 
+            recvResponse(server_fd,client_connection_fd,length2,if_cache_reponse,full_response, cache_map, client_request,isChunked, hasContentLength);      
+        }
 
-    Response response(recvBuffer, sizeof(recvBuffer));     
+    }
+    //if in the cache
+    else{
+        //hanleMapResponse
+        Response response(recvBuffer, sizeof(recvBuffer)); 
+
+
+    }
     send(client_connection_fd,recvBuffer, length2, 0);
 
     bool if_cache_reponse = false;
@@ -51,7 +74,7 @@ void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer
     //don't cache, directly get
         recvResponse(server_fd,client_connection_fd,length2,if_cache_reponse,full_response, cache_map, client_request,isChunked, hasContentLength);
     }else{
-        //cachable
+    //cachable
         
         //if not in the cache
         if(!cache_map.contains(client_request)){
@@ -66,7 +89,7 @@ void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer
             boost::beast::string_view lmdf = response.hasLastModified();
 
             if(hasNoCache|| (maxAge == -1 && hasMustRevalidate)){
-
+                recvResponse(server_fd,client_connection_fd,length2,if_cache_reponse,full_response, cache_map, client_request,isChunked, hasContentLength);
             }else if(maxAge != -1 && hasMustRevalidate){
                 
             }
@@ -183,6 +206,28 @@ void HttpMethod::recvResponse(int server_fd,int client_connection_fd,int length2
         }
     }
     return;
+}
+
+const char * handleMapResponse(vector<char> data){
+
+   // Convert the vector to a const char* array
+    const char* data_ptr = data.data();
+
+    // Find the position of "\r\n\r\n" in the array
+    const char* end_of_headers = std::strstr(data_ptr, "\r\n\r\n");
+
+    if (end_of_headers != nullptr) {
+        // Calculate the length of the headers
+        size_t headers_len = end_of_headers - data_ptr;
+
+        // Allocate a new array for the headers
+        char* headers = new char[headers_len + 5];
+
+        // Copy the headers to the new array
+        std::memcpy(headers, data_ptr, headers_len);
+        headers[headers_len] = '\0';
+        return headers;
+    }
 }
                    
 
