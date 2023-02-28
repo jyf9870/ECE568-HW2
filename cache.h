@@ -8,11 +8,13 @@
 #include <cstring>
 #include <unordered_map>
 #include <sstream>
+#include <mutex>
 #include <vector>
 
 using namespace std;
 class Cache {
  private:
+
   unordered_map <string,vector<char>> responseMap;
  public:
   void put(string request, vector<char> response);

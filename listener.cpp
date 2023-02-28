@@ -23,7 +23,6 @@ using namespace std;
   int client_id;
   Socket socket;
   Cache cache_map;
-  
 };
 
 pthread_mutex_t myMutex = PTHREAD_MUTEX_INITIALIZER;
