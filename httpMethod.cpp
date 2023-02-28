@@ -37,7 +37,7 @@ void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer
     
     //if not in the cache
     if(!cache_map.contains(client_request)){
-      getEntire(server_fd,client_connection_fd,buffer,cache_map);
+      getEntire(server_fd,client_connection_fd,buffer,length,cache_map);
     }
     //if in the cache
     else{
@@ -56,7 +56,7 @@ void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer
         if(hasNoCache || (maxAge == -1 && hasMustRevalidate)){
           //if no eTag and no last-modified,directly send request ro server, like the common get
           if(eTag.empty() && lmdf.empty()){
-             getEntire(server_fd,client_connection_fd,buffer,cache_map);
+             getEntire(server_fd,client_connection_fd,buffer,length,cache_map);
           }
           else{
             //has eTag or Last-modified: revalidate
@@ -86,7 +86,7 @@ void HttpMethod::getRequest(int server_fd, int client_connection_fd, char buffer
               //send from cache
               sendFromMap(client_connection_fd, *cache_map.get(client_request));
             }else{
-               getEntire(server_fd,client_connection_fd,buffer,cache_map);
+               getEntire(server_fd,client_connection_fd,buffer,length,cache_map);
             }
           }
         }
@@ -213,12 +213,13 @@ const char * HttpMethod::handleMapResponse(vector<char> data){
         headers[headers_len] = '\0';
         return headers;
     }
+    return data_ptr;
 }
                    
 
-void HttpMethod::getEntire(int server_fd, int client_connection_fd, char buffer[], Cache & cache_map ){
+void HttpMethod::getEntire(int server_fd, int client_connection_fd, char buffer[],int length, Cache & cache_map ){
     //send request ro server
-  send(server_fd, buffer,sizeof(buffer),0); 
+  send(server_fd, buffer,length,0); 
   char recvBuffer[100000];
   int length2 = recv(server_fd, recvBuffer, 100000, 0);
   if(length2 < 0){
