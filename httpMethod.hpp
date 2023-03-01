@@ -17,14 +17,26 @@ using namespace std;
 
 class HttpMethod {
  public:
-  void connectRequest(int server_fd, int client_connection_fd, int clientID, string request_line, string server_host_name);
+  void connectRequest(int server_fd,
+                      int client_connection_fd,
+                      int clientID,
+                      string request_line,
+                      string server_host_name);
   void getRequest(int server_fd,
                   int client_connection_fd,
                   char buffer[],
                   int length,
                   Cache & cache_map,
-                  int clientID, string request_line, string server_host_name);
-  void postRequest(int server_fd, int client_connection_fd, char buffer[], int length, int clientID, string request_line, string server_hostname);
+                  int clientID,
+                  string request_line,
+                  string server_host_name);
+  void postRequest(int server_fd,
+                   int client_connection_fd,
+                   char buffer[],
+                   int length,
+                   int clientID,
+                   string request_line,
+                   string server_hostname);
   void recvResponse(int server_fd,
                     int client_connection_fd,
                     int currLen,
@@ -39,12 +51,16 @@ class HttpMethod {
                  int client_connection_fd,
                  char buffer[],
                  int length,
-                 Cache & cache_map, int clientID, string server_hostname);
+                 Cache & cache_map,
+                 int clientID,
+                 string server_hostname);
   void sendFromMap(int client_connection_fd, vector<char> response);
   bool is_expired(const std::string & date_str,
                   int max_age,
                   const std::string & expires_str);
   int requestLength(char * server_msg, int mes_len);
+
+  void respond502(int client_connection_fd);
 };
 
 void addToLog(const std::string & message);
@@ -53,4 +69,4 @@ void addToLog(const std::string & message);
 std::string getClientIP(int client_connection_fd);
 
 // Convert GMT time string to UTC time string in asctime format
-std::string convert_expire_time(const std::string& gmt_time_str);
+std::string convert_expire_time(const std::string & gmt_time_str);

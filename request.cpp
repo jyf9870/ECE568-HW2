@@ -15,7 +15,7 @@ string getCurrTime() {
   string time_str = std::asctime(tm_utc);
 
   // Output the formatted time string
-  return time_str;
+  return time_str.substr(0, time_str.size() - 1);
 }
 
 void Request::readRequest() {
@@ -29,7 +29,7 @@ void Request::readRequest() {
   while (getline(ss, line, '\r')) {
     if (!line.empty()) {
       // remove the '\n' character at the end of the line
-      if(lineInd == 0){
+      if (lineInd == 0) {
         this->request_line = line;
         lineInd++;
       }

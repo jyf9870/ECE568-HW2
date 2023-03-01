@@ -58,7 +58,7 @@ void * request_handle(void * client_info) {
     addToLog(
         bad_request_ss
             .str());  // 	If the	proxy	receives	a	malformed	request,	it	MUST	reply	with	a	400	error	code.
-
+    //send(client_connection_fd, )
     return NULL;
   }
 
@@ -66,7 +66,7 @@ void * request_handle(void * client_info) {
   request_ss << curr_client_info->client_id << ": \"" << ctopRequest->getRequesLine()
              << "\" from " << getClientIP(client_connection_fd) << " @ "
              << ctopRequest->getTime();
-  addToLog(request_ss.str());  // add to log: ID: "REQUEST" from IPFROM @ TIME
+   addToLog(request_ss.str());  // add to log: ID: "REQUEST" from IPFROM @ TIME;
 
   string hostname = ctopRequest->getRequestMap().find("Host")->second;
   int server_fd = curr_client_info->socket.connectToServer(

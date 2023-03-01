@@ -67,6 +67,12 @@ void HttpMethod::connectRequest(int server_fd,
               << "\" from " << server_hostname;
   addToLog(response_ss.str());  // ID: Received "RESPONSE" from	SERVER
 
+  stringstream respond_ss;
+  respond_ss << clientID << ": Responding \""
+             << "HTTP/1.1 200 OK"
+             << "\"";
+  addToLog(respond_ss.str());  // ID: Responding "RESPONSE"
+
   while (true) {
     fd_set read_fd;
     int selector = server_fd > client_connection_fd ? server_fd : client_connection_fd;
@@ -184,10 +190,25 @@ void HttpMethod::getRequest(int server_fd,
           cout << ": NOTE revalidate successfullly" << endl;
           //send from cache
 
+          stringstream ok_200_ss;
+          ok_200_ss << clientID << ": cached, but requires re-validation";
+          addToLog(ok_200_ss.str());
+
           // ADD TO LOG: VALID
           addCacheMessage(clientID, "in cache, valid");
 
           sendFromMap(client_connection_fd, *cache_map.get(client_request));
+
+          vector<char> charVec = *cache_map.get(client_request);
+          string str(charVec.begin(), charVec.end());
+          int responseHeader = str.find("\r\n");
+          string resp_res;
+          if (responseHeader != string::npos) {
+            resp_res = str.substr(0, responseHeader);
+          }
+          stringstream respond_ss;
+          respond_ss << clientID << ": Responding \"" << resp_res << "\"";
+          addToLog(respond_ss.str());  // ID: Responding "RESPONSE"
         }
         else {
           // ADD TO LOG: IN CACHE, NEED TO REVALIDATE
@@ -215,6 +236,12 @@ void HttpMethod::getRequest(int server_fd,
       if (date_str != "" && expire_str != "" &&
           is_expired(date_str, maxAge, expire_str)) {
         // add to log: ID: in cache, but expired at EXPIREDTIME
+
+        stringstream ok_200_ss;
+        ok_200_ss << clientID << ": cached, expires at "
+                  << convert_expire_time(expire_str);
+        addToLog(ok_200_ss.str());
+
         stringstream cache_expire;
         cache_expire << "in cache, but expired at " << convert_expire_time(expire_str);
         addCacheMessage(clientID, cache_expire.str());
@@ -234,11 +261,34 @@ void HttpMethod::getRequest(int server_fd,
         // add to log: ID: in cache, valid
         addCacheMessage(clientID, "in cache, valid");
         sendFromMap(client_connection_fd, *cache_map.get(client_request));
+
+        vector<char> charVec = *cache_map.get(client_request);
+        string str(charVec.begin(), charVec.end());
+        int responseHeader = str.find("\r\n");
+        string resp_res;
+        if (responseHeader != string::npos) {
+          resp_res = str.substr(0, responseHeader);
+        }
+        stringstream respond_ss;
+        respond_ss << clientID << ": Responding \"" << resp_res << "\"";
+        addToLog(respond_ss.str());  // ID: Responding "RESPONSE"
       }
     }
     else {
       addCacheMessage(clientID, "in cache, valid");  // add to log: ID: in cache, valid
+
       sendFromMap(client_connection_fd, *cache_map.get(client_request));
+
+      vector<char> charVec = *cache_map.get(client_request);
+      string str(charVec.begin(), charVec.end());
+      int responseHeader = str.find("\r\n");
+      string resp_res;
+      if (responseHeader != string::npos) {
+        resp_res = str.substr(0, responseHeader);
+      }
+      stringstream respond_ss;
+      respond_ss << clientID << ": Responding \"" << resp_res << "\"";
+      addToLog(respond_ss.str());  // ID: Responding "RESPONSE"
     }
   }
 }
@@ -443,6 +493,10 @@ void HttpMethod::getEntire(int server_fd,
   Response response(recvBuffer, sizeof(recvBuffer));
   send(client_connection_fd, recvBuffer, length2, 0);
 
+  stringstream respond_ss;
+  respond_ss << clientID << ": Responding \"" << resp_res << "\"";
+  addToLog(respond_ss.str());  // ID: Responding "RESPONSE"
+
   //init
   bool if_cache_reponse = false;
   vector<char> full_response = response.getResponse();
@@ -453,6 +507,20 @@ void HttpMethod::getEntire(int server_fd,
   //do not need to cache
   if (response.hasPrivate() || response.hasNoStore()) {
     //don't cache, directly get
+
+    if (response.hasPrivate()) {
+      stringstream ok_200_ss;
+      ok_200_ss << clientID << ": not cacheable because has Private";
+      addToLog(ok_200_ss.str());
+      //200 ok --> ID: not cacheable because has Private
+    }
+    else {
+      stringstream ok_200_ss;
+      ok_200_ss << clientID << ": not cacheable because has no-store";
+      addToLog(ok_200_ss.str());
+      //200 ok --> ID: not cacheable because has no-store
+    }
+
     recvResponse(server_fd,
                  client_connection_fd,
                  length2,
@@ -519,6 +587,14 @@ int HttpMethod::requestLength(char * server_msg, int mes_len) {
     }
   }
   return -1;
+}
+
+void HttpMethod::respond502(int client_connection_fd) {
+  if (send(client_connection_fd, "HTTP/1.1 502 Bad Gateway\r\n\r\n", 28, 0) == -1) {
+    throw std::runtime_error(": ERROR send fail in respond502");
+  }
+  //  printLog(connection.getID(), ": WARNING Invalid Response");
+  //  printLog(connection.getID(), ": Responding \"" + std::string("HTTP/1.1 502 Bad Gateway") + "\"");
 }
 
 // int main() {
