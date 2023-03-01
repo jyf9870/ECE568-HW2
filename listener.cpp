@@ -17,6 +17,7 @@
 #include "request.h"
 #include "socket.h"
 
+static Cache cache_map;
 pthread_mutex_t listenerMutex = PTHREAD_MUTEX_INITIALIZER;
 
 using namespace std;
@@ -26,7 +27,13 @@ class Client_Info {
   int client_connection_fd;
   int client_id;
   Socket socket;
-  Cache cache_map;
+
+  Client_Info(int _client_connection_fd,
+              int _client_id,
+              Socket _socket) :
+      client_connection_fd(_client_connection_fd),
+      client_id(_client_id),
+      socket(_socket) {}
 };
 
 void * request_handle(void * client_info) {
@@ -76,6 +83,11 @@ void * request_handle(void * client_info) {
                               ctopRequest->getRequesLine(),
                               ctopRequest->get_server_hostname());
     cout << "CONNECTCONNECTCONNECTCONNECT!!!!!!" << endl;
+
+    stringstream tunnel_close_ss;
+    tunnel_close_ss << curr_client_info->client_id << ": Tunnel closed";
+    addToLog(tunnel_close_ss.str());              // ID: Tunnel closed
+
     return NULL;
   }
 
@@ -85,7 +97,7 @@ void * request_handle(void * client_info) {
                           client_connection_fd,
                           buffer,
                           length,
-                          curr_client_info->cache_map,
+                          cache_map,
                           curr_client_info->client_id,
                           ctopRequest->getRequesLine(),
                           ctopRequest->get_server_hostname());
@@ -114,7 +126,6 @@ void * request_handle(void * client_info) {
 
 int main(int argc, char * argv[]) {
   Socket socket;
-  Cache cache_map;
   int socket_fd = socket.connectToClient();  //connect to client
   if (socket_fd == -1) {
     const string message = "Proxxy can not create server socket for the client!";
@@ -133,11 +144,8 @@ int main(int argc, char * argv[]) {
     }
     pthread_t thread;
     pthread_mutex_lock(&listenerMutex);
-    Client_Info * curr_client_info = new Client_Info();
-    curr_client_info->client_connection_fd = client_connection_fd;
-    curr_client_info->client_id = client_id;
-    curr_client_info->cache_map = cache_map;
-    curr_client_info->socket = socket;
+    Client_Info * curr_client_info =
+        new Client_Info(client_connection_fd, client_id, socket);
     cout << "current client id:" << client_id << endl;
     client_id++;
     pthread_mutex_unlock(&listenerMutex);

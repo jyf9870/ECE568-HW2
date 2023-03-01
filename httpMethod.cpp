@@ -56,7 +56,8 @@ void HttpMethod::connectRequest(int server_fd,
                                 string request_line,
                                 string server_hostname) {
   stringstream request_ss;
-  request_ss << clientID << ": Requesting \"" << request_line << "\" from " << server_hostname;
+  request_ss << clientID << ": Requesting \"" << request_line << "\" from "
+             << server_hostname;
   addToLog(request_ss.str());  // ID: Requesting "REQUEST" from SERVER
   send(client_connection_fd, "HTTP/1.1 200 OK\r\n\r\n", 19, 0);
 
@@ -111,7 +112,8 @@ void HttpMethod::getRequest(int server_fd,
     addCacheMessage(clientID, "not in cache");  // add to log: ID: not in cache
 
     stringstream request_ss;
-    request_ss << clientID << ": Requesting \"" << request_line << "\" from " << server_hostname;
+    request_ss << clientID << ": Requesting \"" << request_line << "\" from "
+               << server_hostname;
     addToLog(request_ss.str());  // ID: Requesting "REQUEST" from SERVER
 
     getEntire(server_fd,
@@ -266,7 +268,8 @@ void HttpMethod::postRequest(int server_fd,
 
   //ID: Requesting "REQUEST" from SERVER
   stringstream request_ss_1;
-  request_ss_1 << clientID << ": Requesting \"" << request_line << "\" from " << server_hostname;
+  request_ss_1 << clientID << ": Requesting \"" << request_line << "\" from "
+               << server_hostname;
   addToLog(request_ss_1.str());  // ID: Requesting "REQUEST" from SERVER
 
   if (send(server_fd, client_request.c_str(), length, 0) == -1) {
@@ -292,12 +295,17 @@ void HttpMethod::postRequest(int server_fd,
 
   stringstream response_ss;
   response_ss << clientID << ": Received \"" << resp_res << "\" from " << server_hostname;
-  addToLog(response_ss.str());  // ID: Requesting "REQUEST" from SERVER
+  addToLog(response_ss.str());  // ID: Received "RESPONSE" from	SERVER
 
   if (send(client_connection_fd, recvBuffer, n, 0) <= 0) {
     std::cerr << "Error relaying response to client: " << strerror(errno) << std::endl;
     return;
   }
+
+  stringstream respond_ss;
+  respond_ss << clientID << ": Responding \"" << resp_res << "\"";
+  addToLog(respond_ss.str());  // ID: Responding "RESPONSE"
+
   //sometimes go with response content somtimes not????
   const char * end_of_headers = std::strstr(recvBuffer, "{");
   if (end_of_headers != nullptr)
